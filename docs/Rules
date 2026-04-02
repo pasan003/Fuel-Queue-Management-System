@@ -1,0 +1,94 @@
+# 🚧 Project Rules & Contribution Guidelines
+## Fuel Queue Management System
+
+These rules must be followed by all team members to ensure smooth development, avoid conflicts, and maintain code quality.
+
+---
+
+## 🌿 1. Branching Strategy
+
+- NEVER push directly to `main` branch
+- ALWAYS create a new branch for your work
+
+### Branch Naming Convention:
+- `feature/<feature-name>` → New features
+- `bugfix/<bug-name>` → Bug fixes
+- `hotfix/<urgent-fix>` → Critical fixes
+
+### Example:
+feature/login-system
+bugfix/queue-display-error
+
+
+---
+
+## 🔀 2. Pull Requests & Merging
+
+- DO NOT merge your own branch
+- ALWAYS create a Pull Request (PR)
+- At least one team member must review before merging
+
+### Before creating PR:
+- Test your code
+- Make sure no errors
+- Pull latest changes from `main`
+
+---
+
+## ⚠️ 3. Conflict Handling
+
+- If GitHub shows conflicts → FIX them before merging
+- NEVER ignore conflicts
+- Ask team member if unsure
+
+---
+
+## 🧪 4. Testing Rules
+
+Before pushing code:
+
+- Check all pages are working
+- Test login & register
+- Test database operations
+- Make sure no console errors
+
+---
+
+## 🗂️ 5. File Structure Rules
+
+- Keep frontend and backend separate
+- Do NOT create random files in root folder
+- Follow project structure:
+  /frontend
+  /backend
+  /database
+
+---
+
+## 🔐 6. Security Rules
+
+- NEVER upload `.env` file
+- NEVER expose database passwords
+- Do NOT hardcode sensitive data
+
+---
+
+## 📸 7. Uploads & Files
+
+- Do NOT upload large files to GitHub
+- Ignore user-uploaded images (`uploads/` folder)
+
+---
+
+## 📝 8. Code Quality
+
+- Write clean and readable code
+- Use proper variable names
+- Add comments when necessary
+
+BAD:
+```php
+$a = 5;
+
+GOOD:
+ $queue_length = 5;
