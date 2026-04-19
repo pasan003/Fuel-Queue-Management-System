@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fuel Queue Management System - Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #0066cc;
+      --secondary-color: #1abc9c;
+      --success-color: #27ae60;
+      --danger-color: #e74c3c;
+      --warning-color: #f39c12;
+      --light-bg: #f8fafc;
+      --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      --card-hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--light-bg);
+      color: #2c3e50;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: linear-gradient(135deg, var(--primary-color) 0%, #0052a3 100%);
+      box-shadow: var(--card-shadow);
+      padding: 1rem 2rem;
+    }
+
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.35rem;
+      color: #fff !important;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .navbar-brand i {
+      font-size: 1.5rem;
+    }
+
+    .nav-user-profile {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-logout {
+      background: rgba(255, 255, 255, 0.2) !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      color: #fff !important;
+      transition: all 0.3s ease;
+    }
+
+    .btn-logout:hover {
+      background: rgba(255, 255, 255, 0.3) !important;
+      transform: scale(1.05);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: #fff;
+      height: calc(100vh - 73px);
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+      position: fixed;
+      left: 0;
+      top: 73px;
+      transition: transform 0.3s ease;
+      z-index: 100;
+    }
+
+    .sidebar.hidden {
+      transform: translateX(-100%);
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 1.5rem 0;
+    }
+
+    .sidebar-menu li {
+      margin: 0.5rem 0;
+    }
+
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1.5rem;
+      color: #7f8c8d;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      border-left: 4px solid transparent;
+    }
+
+    .sidebar-menu a:hover,
+    .sidebar-menu a.active {
+      background: rgba(0, 102, 204, 0.08);
+      color: var(--primary-color);
+      border-left-color: var(--primary-color);
+    }
+
+    .sidebar-menu i {
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: 250px;
+      padding: 2rem;
+      transition: margin-left 0.3s ease;
+    }
+
+    .main-content.fullwidth {
+      margin-left: 0;
+    }
+
+    .toggle-sidebar {
+      display: none;
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+
+    /* Welcome Section */
+    .welcome-section {
+      margin-bottom: 2rem;
+    }
+
+    .welcome-section h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+
+    .welcome-section p {
+      color: #7f8c8d;
+      font-size: 1.05rem;
+    }
+
+    /* Summary Cards */
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .summary-card {
+      background: #fff;
+      border-radius: 1rem;
+      padding: 1.75rem;
+      box-shadow: var(--card-shadow);
+      transition: all 0.3s ease;
+      border: 1px solid #ecf0f1;
+    }
+
+    .summary-card:hover {
+      box-shadow: var(--card-hover-shadow);
+      transform: translateY(-5px);
+    }
+
+    .summary-card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.75rem;
+    }
+
+    .summary-card-icon.blue {
+      background: rgba(0, 102, 204, 0.1);
+      color: var(--primary-color);
+    }
+
+    .summary-card-icon.green {
+      background: rgba(39, 174, 96, 0.1);
+      color: var(--success-color);
+    }
+
+    .summary-card-icon.orange {
+      background: rgba(243, 156, 18, 0.1);
+      color: var(--warning-color);
+    }
+
+    .summary-card-icon.teal {
+      background: rgba(26, 188, 156, 0.1);
+      color: var(--secondary-color);
+    }
+
+    .summary-card-value {
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin: 0.75rem 0;
+    }
+
+    .summary-card-label {
+      color: #95a5a6;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    /* Search Box */
+    .search-section {
+      margin-bottom: 2rem;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box input {
+      flex: 1;
+      min-width: 250px;
+      padding: 0.75rem 1.25rem;
+      border: 1px solid #ecf0f1;
+      border-radius: 0.75rem;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    }
+
+    .search-box button {
+      padding: 0.75rem 2rem;
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .search-box button:hover {
+      background: #0052a3;
+      transform: scale(1.02);
+    }
+
+    /* Section Title */
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-title i {
+      color: var(--primary-color);
+    }
+
+    /* Station Cards Grid */
+    .stations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .station-card {
+      background: #fff;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      border: 1px solid #ecf0f1;
+      transition: all 0.3s ease;
+    }
+
+    .station-card:hover {
+      box-shadow: var(--card-hover-shadow);
+      transform: translateY(-8px);
+    }
+
+    .station-header {
+      margin-bottom: 1.25rem;
+    }
+
+    .station-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 0.35rem;
+    }
+
+    .station-location {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #7f8c8d;
+      font-size: 0.9rem;
+    }
+
+    .station-location i {
+      color: var(--primary-color);
+    }
+
+    .fuel-availability {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    .fuel-item {
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 0.75rem;
+      text-align: center;
+    }
+
+    .fuel-type {
+      font-size: 0.85rem;
+      color: #7f8c8d;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-available {
+      background: rgba(39, 174, 96, 0.15);
+      color: var(--success-color);
+    }
+
+    .status-unavailable {
+      background: rgba(231, 76, 60, 0.15);
+      color: var(--danger-color);
+    }
+
+    .queue-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 0.75rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    .queue-label {
+      color: #7f8c8d;
+    }
+
+    .queue-short {
+      background: rgba(39, 174, 96, 0.15);
+      color: var(--success-color);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .queue-medium {
+      background: rgba(243, 156, 18, 0.15);
+      color: var(--warning-color);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .queue-long {
+      background: rgba(231, 76, 60, 0.15);
+      color: var(--danger-color);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .waiting-time {
+      background: rgba(0, 102, 204, 0.08);
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.5rem;
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+
+    .station-footer {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .btn-view-details {
+      flex: 1;
+      padding: 0.75rem;
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-view-details:hover {
+      background: #0052a3;
+      transform: scale(1.02);
+    }
+
+    .btn-favorite {
+      padding: 0.75rem 1rem;
+      background: #f8fafc;
+      color: var(--primary-color);
+      border: 1px solid #ecf0f1;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-favorite:hover {
+      background: #ecf0f1;
+      color: var(--danger-color);
+    }
+
+    /* Chart Section */
+    .chart-section {
+      background: #fff;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: var(--card-shadow);
+      border: 1px solid #ecf0f1;
+      margin-bottom: 2.5rem;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-top: 1.5rem;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 1rem;
+      }
+
+      .toggle-sidebar {
+        display: inline-block;
+      }
+
+      .welcome-section h1 {
+        font-size: 1.5rem;
+      }
+
+      .summary-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .stations-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-user-profile {
+        gap: 0.5rem;
+        font-size: 0.9rem;
+      }
+
+      .navbar-brand {
+        font-size: 1.1rem;
+      }
+
+      .search-box {
+        flex-direction: column;
+      }
+
+      .search-box input {
+        min-width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .navbar {
+        padding: 0.75rem 1rem;
+      }
+
+      .navbar-brand {
+        font-size: 1rem;
+      }
+
+      .nav-user-profile {
+        display: none;
+      }
+
+      .welcome-section h1 {
+        font-size: 1.25rem;
+      }
+
+      .summary-card {
+        padding: 1.25rem;
+      }
+
+      .section-title {
+        font-size: 1.25rem;
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .station-card {
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .station-card:nth-child(1) {
+      animation-delay: 0.05s;
+    }
+
+    .station-card:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .station-card:nth-child(3) {
+      animation-delay: 0.15s;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <i class="fas fa-gas-pump"></i>
+      Fuel Queue Management System
+    </div>
+    <div class="nav-user-profile ms-auto">
+      <button class="btn btn-sm" style="color: #fff; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
+        <i class="fas fa-bell"></i> Notifications
+      </button>
+      <div class="user-avatar">AM</div>
+      <div>
+        <small style="display: block; opacity: 0.8;">Welcome back</small>
+        <strong>Alex Morgan</strong>
+      </div>
+      <button class="btn-logout">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <ul class="sidebar-menu">
+      <li><a href="#dashboard" class="active" data-page="dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+      <li><a href="#find-stations" data-page="find-stations"><i class="fas fa-map-location-dot"></i> Find Stations</a></li>
+      <li><a href="#my-reports" data-page="my-reports"><i class="fas fa-file-chart-bar"></i> My Reports</a></li>
+      <li><a href="#notifications" data-page="notifications"><i class="fas fa-bell"></i> Notifications</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <button class="toggle-sidebar" id="toggleSidebar"><i class="fas fa-bars"></i></button>
+
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+      <h1>Welcome back, Alex! 👋</h1>
+      <p>Check fuel availability and queue status at nearby stations</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-card-icon blue"><i class="fas fa-gas-pump"></i></div>
+        <div class="summary-card-value">12</div>
+        <div class="summary-card-label">Nearby Stations</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-icon green"><i class="fas fa-check-circle"></i></div>
+        <div class="summary-card-value">8</div>
+        <div class="summary-card-label">Available Petrol</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-icon orange"><i class="fas fa-droplet"></i></div>
+        <div class="summary-card-value">7</div>
+        <div class="summary-card-label">Available Diesel</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-icon teal"><i class="fas fa-hourglass-end"></i></div>
+        <div class="summary-card-value">18 min</div>
+        <div class="summary-card-label">Avg Queue Time</div>
+      </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-section">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by location or station name...">
+        <button onclick="searchStations()"><i class="fas fa-search"></i> Search</button>
+      </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-section">
+      <div class="section-title">
+        <i class="fas fa-chart-line"></i>
+        Queue Trends (Last 7 Days)
+      </div>
+      <div class="chart-container">
+        <canvas id="queueChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Fuel Stations Section -->
+    <div>
+      <div class="section-title">
+        <i class="fas fa-list"></i>
+        Fuel Stations Near You
+      </div>
+      <div class="stations-grid" id="stationsGrid">
+        <!-- Station cards will be loaded here -->
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+  <script>
+    // Dummy Data
+    const stationsData = [
+      {
+        id: 1,
+        name: "Shell Fuel Station",
+        location: "Downtown, Main Street",
+        petrol: true,
+        diesel: true,
+        queue: "short",
+        waitingTime: "5-10 min",
+        rating: 4.5
+      },
+      {
+        id: 2,
+        name: "BP Energy Hub",
+        location: "Harbor District",
+        petrol: true,
+        diesel: false,
+        queue: "medium",
+        waitingTime: "15-20 min",
+        rating: 4.2
+      },
+      {
+        id: 3,
+        name: "ExxonMobil Express",
+        location: "Airport Road",
+        petrol: false,
+        diesel: true,
+        queue: "long",
+        waitingTime: "25-30 min",
+        rating: 3.8
+      },
+      {
+        id: 4,
+        name: "Chevron Quick Stop",
+        location: "Central Plaza",
+        petrol: true,
+        diesel: true,
+        queue: "short",
+        waitingTime: "8-12 min",
+        rating: 4.7
+      },
+      {
+        id: 5,
+        name: "Oman Oil Station",
+        location: "Industrial Zone",
+        petrol: true,
+        diesel: true,
+        queue: "medium",
+        waitingTime: "12-18 min",
+        rating: 4.1
+      },
+      {
+        id: 6,
+        name: "Fuel Depot Prime",
+        location: "South Valley",
+        petrol: false,
+        diesel: true,
+        queue: "short",
+        waitingTime: "6-15 min",
+        rating: 4.4
+      }
+    ];
+
+    // Initialize Dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+      renderStationCards(stationsData);
+      initializeChart();
+      setupEventListeners();
+    });
+
+    // Render Station Cards
+    function renderStationCards(stations) {
+      const grid = document.getElementById('stationsGrid');
+      grid.innerHTML = '';
+
+      stations.forEach(station => {
+        const petrolStatus = station.petrol ? 'Available' : 'Not Available';
+        const dieselStatus = station.diesel ? 'Available' : 'Not Available';
+        const petrolClass = station.petrol ? 'status-available' : 'status-unavailable';
+        const dieselClass = station.diesel ? 'status-available' : 'status-unavailable';
+
+        const queueClass = station.queue === 'short' ? 'queue-short' : 
+                          station.queue === 'medium' ? 'queue-medium' : 'queue-long';
+
+        const card = document.createElement('div');
+        card.className = 'station-card';
+        card.innerHTML = `
+          <div class="station-header">
+            <div class="station-name">${station.name}</div>
+            <div class="station-location">
+              <i class="fas fa-map-marker-alt"></i>
+              ${station.location}
+            </div>
+          </div>
+
+          <div class="fuel-availability">
+            <div class="fuel-item">
+              <div class="fuel-type"><i class="fas fa-droplet"></i> Petrol</div>
+              <div class="status-badge ${petrolClass}">
+                <i class="fas fa-${station.petrol ? 'check-circle' : 'times-circle'}"></i>
+                ${petrolStatus}
+              </div>
+            </div>
+            <div class="fuel-item">
+              <div class="fuel-type"><i class="fas fa-droplet"></i> Diesel</div>
+              <div class="status-badge ${dieselClass}">
+                <i class="fas fa-${station.diesel ? 'check-circle' : 'times-circle'}"></i>
+                ${dieselStatus}
+              </div>
+            </div>
+          </div>
+
+          <div class="queue-info">
+            <span class="queue-label"><i class="fas fa-users"></i> Queue:</span>
+            <span class="${queueClass}">${station.queue.charAt(0).toUpperCase() + station.queue.slice(1)}</span>
+          </div>
+
+          <div class="queue-info">
+            <span class="queue-label"><i class="fas fa-clock"></i> Wait Time:</span>
+            <span class="waiting-time">${station.waitingTime}</span>
+          </div>
+
+          <div class="station-footer">
+            <button class="btn-view-details" onclick="viewDetails(${station.id})">
+              <i class="fas fa-info-circle"></i> View Details
+            </button>
+            <button class="btn-favorite" onclick="toggleFavorite()">
+              <i class="far fa-heart"></i>
+            </button>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    // Initialize Chart
+    function initializeChart() {
+      const ctx = document.getElementById('queueChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [
+            {
+              label: 'Avg Queue Time (minutes)',
+              data: [22, 19, 25, 20, 28, 35, 30],
+              borderColor: '#0066cc',
+              backgroundColor: 'rgba(0, 102, 204, 0.1)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: '#0066cc',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 5
+            },
+            {
+              label: 'Peak Hour Queue (minutes)',
+              data: [35, 32, 40, 38, 45, 50, 48],
+              borderColor: '#f39c12',
+              backgroundColor: 'rgba(243, 156, 18, 0.1)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: '#f39c12',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                padding: 20,
+                font: { size: 12, weight: 600 }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 60,
+              grid: { color: 'rgba(0, 0, 0, 0.05)' }
+            },
+            x: {
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // Search Stations
+    function searchStations() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = stationsData.filter(station =>
+        station.name.toLowerCase().includes(searchTerm) ||
+        station.location.toLowerCase().includes(searchTerm)
+      );
+      renderStationCards(filtered.length > 0 ? filtered : stationsData);
+    }
+
+    // View Details
+    function viewDetails(stationId) {
+      const station = stationsData.find(s => s.id === stationId);
+      alert(`Station: ${station.name}\nLocation: ${station.location}\nQueue: ${station.queue}\nWait Time: ${station.waitingTime}`);
+    }
+
+    // Toggle Favorite
+    function toggleFavorite() {
+      event.target.classList.toggle('fa-heart');
+      event.target.classList.toggle('far');
+      event.target.classList.toggle('fas');
+    }
+
+    // Setup Event Listeners
+    function setupEventListeners() {
+      // Toggle Sidebar
+      document.getElementById('toggleSidebar').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.toggle('hidden');
+      });
+
+      // Sidebar Menu
+      document.querySelectorAll('.sidebar-menu a').forEach(link => {
+        link.addEventListener('click', function(e) {
+          document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+
+      // Search on Enter
+      document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          searchStations();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
