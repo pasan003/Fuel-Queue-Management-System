@@ -11,135 +11,10 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    <style>
-        body {
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            position: relative;
-        }
-
-        /* Background Car Style */
-        .car {
-            position: absolute;
-            font-size: 26px;
-            color: rgba(255,255,255,0.6);
-            z-index: 0;
-        }
-
-        /* Top Car (above login card) */
-        .car-top {
-            top: 5%;
-            animation: moveRight 10s linear infinite;
-        }
-
-        /* Bottom Car (below login card) */
-        .car-bottom {
-            bottom: 5%;
-            animation: moveLeft 12s linear infinite;
-        }
-
-        /* Move Left to Right */
-        @keyframes moveRight {
-            0% { left: -60px; }
-            100% { left: 110%; }
-        }
-
-        /* Move Right to Left */
-        @keyframes moveLeft {
-            0% { left: 110%; }
-            100% { left: -60px; }
-        }
-
-        /* Login Card */
-        .login-card {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            padding: 35px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 
-                0 0 20px rgba(0, 255, 255, 0.2),
-                inset 0 0 15px rgba(255, 255, 255, 0.05);
-            color: #fff;
-            z-index: 1;
-        }
-
-        .login-title {
-            text-align: center;
-            margin-bottom: 25px;
-            font-weight: bold;
-        }
-
-        .form-label { color: #ddd; }
-
-        .form-control {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: #fff;
-            border-radius: 10px;
-        }
-
-        .form-control::placeholder { color: #bbb; }
-
-        .form-control:focus {
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 10px rgba(0,255,255,0.5);
-            color: #fff;
-        }
-
-        .btn-login {
-            background: linear-gradient(45deg, #00c6ff, #0072ff);
-            border: none;
-            border-radius: 10px;
-            transition: 0.3s;
-        }
-
-        .btn-login:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
-        }
-
-        .toggle-password {
-            cursor: pointer;
-            position: absolute;
-            right: 15px;
-            top: 38px;
-            color: #ccc;
-        }
-
-        .form-group { position: relative; }
-
-        .error {
-            color: #ff6b6b;
-            font-size: 0.85rem;
-        }
-
-        .links {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .links a {
-            text-decoration: none;
-            font-size: 0.9rem;
-            color: #ccc;
-        }
-
-        .links a:hover {
-            color: #fff;
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/auth.css">
 </head>
-<body>
+<body class="auth-body">
 
 <!-- Top Car -->
 <i class="fa-solid fa-car car car-top"></i>
@@ -147,20 +22,20 @@
 <!-- Bottom Car -->
 <i class="fa-solid fa-car car car-bottom"></i>
 
-<div class="login-card">
+<div class="auth-card login-card">
     <h3 class="login-title">🚗 Fuel Queue System</h3>
 
-    <form id="loginForm">
+    <form id="loginForm" method="post" action="../backend/login.php" novalidate>
         <div class="mb-3">
             <label class="form-label">Username</label>
-            <input type="text" class="form-control" id="username" placeholder="Enter username">
+            <input type="text" class="form-control" id="username" name="username" placeholder="Enter username">
             <div id="usernameError" class="error"></div>
         </div>
 
         <div class="mb-3 form-group">
             <label class="form-label">Password</label>
-            <input type="password" class="form-control" id="password" placeholder="Enter password">
-            <i class="fa fa-eye toggle-password" onclick="togglePassword()"></i>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Enter password">
+            <i class="fa fa-eye toggle-password" aria-hidden="true"></i>
             <div id="passwordError" class="error"></div>
         </div>
 
@@ -173,51 +48,7 @@
     </div>
 </div>
 
-<script>
-    const form = document.getElementById('loginForm');
-
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        let valid = true;
-
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value.trim();
-
-        document.getElementById('usernameError').innerText = "";
-        document.getElementById('passwordError').innerText = "";
-
-        if (username === "") {
-            document.getElementById('usernameError').innerText = "Username is required";
-            valid = false;
-        }
-
-        if (password === "") {
-            document.getElementById('passwordError').innerText = "Password is required";
-            valid = false;
-        } else if (password.length < 6) {
-            document.getElementById('passwordError').innerText = "Password must be at least 6 characters";
-            valid = false;
-        }
-
-        if (valid) {
-            alert("Login successful (frontend demo)");
-        }
-    });
-
-    function togglePassword() {
-        const password = document.getElementById('password');
-        const icon = document.querySelector('.toggle-password');
-
-        if (password.type === "password") {
-            password.type = "text";
-            icon.classList.replace("fa-eye", "fa-eye-slash");
-        } else {
-            password.type = "password";
-            icon.classList.replace("fa-eye-slash", "fa-eye");
-        }
-    }
-</script>
+<script src="js/auth.js"></script>
 
 </body>
 </html>
