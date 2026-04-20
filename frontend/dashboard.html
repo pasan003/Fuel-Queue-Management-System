@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard | Fuel Queue System</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Project CSS -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+  <div class="page">
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg topbar py-3">
+      <div class="container">
+        <a class="brand" href="dashboard.html" aria-label="Fuel Queue System Home">
+          <i class="fa-solid fa-gas-pump"></i>
+          <span>Fuel Queue System</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarUser" aria-controls="navbarUser" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarUser">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2 mt-3 mt-lg-0">
+            <li class="nav-item">
+              <a class="nav-link nav-link-custom active" href="dashboard.html">
+                <i class="fa-solid fa-grid-2 me-2"></i>Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link nav-link-custom" href="login.html" id="logoutLink">
+                <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
+              </a>
+            </li>
+            <li class="nav-item d-none d-lg-block ms-lg-2">
+              <div class="user-pill" title="Signed in user">
+                <span class="avatar" id="userAvatar">US</span>
+                <span id="userName">User</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container pb-5">
+      <!-- Header Section -->
+      <section class="hero animate-in">
+        <h1>Fuel Station Dashboard</h1>
+        <p>Check real-time fuel availability and queue status</p>
+      </section>
+
+      <!-- Search + Filter -->
+      <section class="panel controls animate-in" style="animation-delay: 0.06s;">
+        <div class="row g-3 align-items-center">
+          <div class="col-12 col-lg-6">
+            <div class="input-group">
+              <span class="input-group-text" style="background: #fff; border: 1px solid rgba(26,26,26,0.10); color: #0D7377; border-right: none; border-radius: 14px 0 0 14px;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </span>
+              <input id="searchInput" type="text" class="form-control search-input" placeholder="Search by station name or location..." aria-label="Search stations">
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="filter-group justify-content-lg-end" role="group" aria-label="Station status filters">
+              <button class="filter-btn active" type="button" data-filter="all">All</button>
+              <button class="filter-btn" type="button" data-filter="available">Available</button>
+              <button class="filter-btn" type="button" data-filter="limited">Limited</button>
+              <button class="filter-btn" type="button" data-filter="nofuel">No Fuel</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Map Section (UI only) -->
+      <section class="panel map-card animate-in" style="animation-delay: 0.10s;">
+        <div class="map-placeholder">
+          <div>
+            <i class="fa-solid fa-map-location-dot"></i>
+            <div class="title">Map View (Google Maps Integration)</div>
+            <div class="sub">UI placeholder only — integrate Google Maps later</div>
+          </div>
+        </div>
+        <div class="legend" aria-label="Fuel status legend">
+          <span class="legend-item"><span class="dot green"></span>Green = Available</span>
+          <span class="legend-item"><span class="dot yellow"></span>Yellow = Limited</span>
+          <span class="legend-item"><span class="dot red"></span>Red = No Fuel</span>
+        </div>
+      </section>
+
+      <!-- Fuel Station Cards -->
+      <section class="panel stations-wrap animate-in" style="animation-delay: 0.14s;">
+        <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-2">
+          <h2 class="section-title mb-0">
+            <i class="fa-solid fa-gas-pump"></i>
+            Nearby Fuel Stations
+          </h2>
+          <div class="results-meta fw-semibold" id="resultsMeta" aria-live="polite"></div>
+        </div>
+
+        <div class="row g-3" id="stationsGrid">
+          <!-- cards injected by JS -->
+        </div>
+
+        <div class="mt-3 d-none" id="emptyWrap">
+          <div class="empty-state">
+            <div class="fw-bold" style="font-size: 1.05rem;">No stations found</div>
+            <div class="mt-2">Try a different search term or switch the filter.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
+

@@ -93,19 +93,54 @@ User Browser → Frontend (HTML/CSS/JS) → PHP Server → MySQL Database
 
 ## 🗂️ Project Structure
 ```text
-fuel-queue-system/
+Fuel-Queue-Management-System/
 │
 ├── frontend/
-│   ├── login.html      # User login interface with validation
-│   └── register.html   # User/Owner registration interface with validation
+│   ├── css/            # Stylesheets
+│   ├── js/             # Client-side logic
+│   ├── login.html      # Login interface
+│   ├── register.html   # Registration interface
+│   └── dashboard.html  # Main dashboard
+├── backend/
+│   ├── config.php      # Database connection
+│   ├── login.php       # Login handler
+│   └── register.php    # Registration handler
 ├── database/
-│   └── fqms.sql        # Database schema and initial data
-├── docs/               # Project documentation and proposals
-│   ├── FQMS- Database.pdf
-│   ├── Project proposal - Fuel Queue Management System.pdf
-│   └── Rules           # Project contribution guidelines
+│   └── fqms.sql        # Database schema
+├── docs/               # Documentation
 └── README.md
 ```
+
+---
+
+## ⚙️ How to Run This Project
+
+Follow these steps to set up and run the project locally:
+
+### 1. Prerequisites
+- Install a local server environment like **XAMPP**, **WAMP**, or **MAMP**.
+- Ensure you have **MySQL** and **PHP** (v7.4+) installed.
+
+### 2. Set Up the Project
+- Clone the repository or download the source code.
+- Place the project folder inside your server's root directory (e.g., `C:\xampp\htdocs\` for XAMPP or `C:\wamp64\www\` for WAMP).
+
+### 3. Database Configuration (Optional for now)
+- The project currently uses a **JSON-based storage system** (`backend/data/users.json`) for ease of development.
+- However, a MySQL schema is provided in `database/fqms.sql` for future migration.
+- If you want to prepare the database:
+  - Open **phpMyAdmin**.
+  - Create a new database named `fqms`.
+  - Import the SQL file located at `database/fqms.sql`.
+
+### 4. Configure Backend
+- No configuration is required for the current JSON storage.
+- If migrating to MySQL in the future, you would update `backend/config.php`.
+
+### 5. Launch the Application
+- Start your Apache server.
+- Open your browser and navigate to:
+  `http://localhost/Fuel-Queue-Management-System/frontend/login.html`
 
 ---
 

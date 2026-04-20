@@ -1,0 +1,243 @@
+/* Auth pages (login/register) theme + components */
+
+body.auth-body {
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  position: relative;
+}
+
+/* Background cars (auth pages only) */
+.car {
+  position: absolute;
+  font-size: 26px;
+  color: rgba(255, 255, 255, 0.6);
+  z-index: 0;
+}
+
+.car-top {
+  top: 5%;
+  animation: moveRight 10s linear infinite;
+}
+
+.car-bottom {
+  bottom: 5%;
+  animation: moveLeft 12s linear infinite;
+}
+
+@keyframes moveRight {
+  0% { left: -60px; }
+  100% { left: 110%; }
+}
+
+@keyframes moveLeft {
+  0% { left: 110%; }
+  100% { left: -60px; }
+}
+
+/* Shared auth card base */
+.auth-card {
+  position: relative;
+  width: 100%;
+  padding: 35px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 0 20px rgba(0, 255, 255, 0.2),
+    inset 0 0 15px rgba(255, 255, 255, 0.05);
+  color: #fff;
+  z-index: 1;
+}
+
+.login-card { max-width: 400px; }
+
+.register-card {
+  max-width: 440px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.auth-title,
+.login-title,
+.register-title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.register-title { flex-shrink: 0; }
+
+.register-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  padding-right: 6px;
+  margin-right: -6px;
+}
+
+.register-scroll::-webkit-scrollbar { width: 6px; }
+.register-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 198, 255, 0.35);
+  border-radius: 10px;
+}
+
+.form-label { color: #ddd; }
+
+.form-control {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  border-radius: 10px;
+}
+
+.form-control::placeholder { color: #bbb; }
+
+.form-control:focus {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  color: #fff;
+}
+
+.btn-auth,
+.btn-login {
+  background: linear-gradient(45deg, #00c6ff, #0072ff);
+  border: none;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+.btn-auth:hover,
+.btn-login:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
+}
+
+.toggle-password {
+  cursor: pointer;
+  position: absolute;
+  right: 15px;
+  top: 38px;
+  color: #ccc;
+}
+
+.form-group { position: relative; }
+
+.error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+}
+
+.links {
+  text-align: center;
+  margin-top: 15px;
+  flex-shrink: 0;
+}
+
+.links a {
+  text-decoration: none;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.links a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* Register: user type toggle */
+.user-type-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.user-type-btn {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ddd;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.user-type-btn:hover {
+  color: #fff;
+  border-color: rgba(0, 198, 255, 0.5);
+  box-shadow: 0 0 12px rgba(0, 198, 255, 0.25);
+}
+
+.user-type-btn.active {
+  background: linear-gradient(45deg, #00c6ff, #0072ff);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
+}
+
+.section-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 12px;
+  margin-top: 4px;
+}
+
+.owner-panel {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.35s ease, max-height 0.45s ease, transform 0.35s ease;
+}
+
+.owner-panel.visible {
+  opacity: 1;
+  max-height: 1000px;
+  transform: translateY(0);
+}
+
+.station-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 6px;
+}
+
+.form-check-input {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.form-check-input:checked {
+  background-color: #0072ff;
+  border-color: #00c6ff;
+}
+
+.form-check-label { color: #ddd; }
+
+@media (max-width: 576px) {
+  .register-card {
+    max-width: 100%;
+    margin: 12px;
+    padding: 24px;
+    max-height: calc(100vh - 24px);
+  }
+  .login-card {
+    max-width: 100%;
+    margin: 12px;
+    padding: 28px;
+  }
+}
+
