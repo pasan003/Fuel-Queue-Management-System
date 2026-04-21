@@ -1,0 +1,592 @@
+/* Owner Dashboard Specific Styles */
+
+/* ========================================
+   FUEL MANAGEMENT SECTION
+   ======================================== */
+
+.fuel-management-panel {
+  margin-top: 18px;
+  padding: 28px;
+}
+
+.fuel-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.fuel-control-item {
+  background: linear-gradient(135deg, rgba(13, 115, 119, 0.06), rgba(20, 255, 236, 0.08));
+  border: 2px solid rgba(13, 115, 119, 0.15);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all var(--t) ease;
+}
+
+.fuel-control-item:hover {
+  border-color: rgba(13, 115, 119, 0.28);
+  box-shadow: 0 8px 24px rgba(13, 115, 119, 0.12);
+  transform: translateY(-2px);
+}
+
+.fuel-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.fuel-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.fuel-icon {
+  font-size: 2.2rem;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: #fff;
+}
+
+.fuel-icon.petrol-icon {
+  background: linear-gradient(135deg, #FF6B35, #FF8A5E);
+}
+
+.fuel-icon.diesel-icon {
+  background: linear-gradient(135deg, #0D7377, #0A5A5D);
+}
+
+.fuel-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.fuel-description {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.fuel-toggle {
+  margin: 0;
+}
+
+/* Custom switch styling */
+.form-check-input {
+  width: 50px;
+  height: 28px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all var(--t) ease;
+  border: 2px solid rgba(13, 115, 119, 0.3);
+  background-color: #e9ecef;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.2rem rgba(13, 115, 119, 0.25);
+}
+
+.form-check-input:hover {
+  transform: scale(1.05);
+}
+
+.fuel-status-mini {
+  padding-left: 62px;
+  animation: slideInRight 0.3s ease both;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition: all var(--t) ease;
+  cursor: pointer;
+  min-height: 40px;
+  justify-content: center;
+}
+
+.status-badge:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.status-badge.available {
+  background: rgba(45, 106, 79, 0.12);
+  color: var(--status-available);
+  border: 2px solid rgba(45, 106, 79, 0.2);
+}
+
+.status-badge.limited {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--status-limited);
+  border: 2px solid rgba(245, 158, 11, 0.2);
+}
+
+.status-badge.no-fuel {
+  background: rgba(216, 71, 39, 0.12);
+  color: var(--status-nofuel);
+  border: 2px solid rgba(216, 71, 39, 0.2);
+}
+
+.fuel-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(26, 26, 26, 0.08);
+}
+
+.btn-update {
+  background: linear-gradient(135deg, var(--primary), #0A5A5D);
+  border: none;
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all var(--t) ease;
+  cursor: pointer;
+  min-width: 160px;
+  text-align: center;
+}
+
+.btn-update:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-md);
+  color: #fff;
+}
+
+.btn-update:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.last-saved-time {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ========================================
+   STATION STATUS SECTION
+   ======================================== */
+
+.station-status-panel {
+  margin-top: 18px;
+  padding: 28px;
+}
+
+.station-info-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(250, 250, 248, 0.8));
+  border: 1px solid rgba(26, 26, 26, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.info-item {
+  padding: 12px 0;
+}
+
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.info-label i {
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.info-value {
+  margin-top: 8px;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.auto-status-display {
+  background: linear-gradient(135deg, rgba(13, 115, 119, 0.08), rgba(20, 255, 236, 0.06));
+  border: 2px dashed rgba(13, 115, 119, 0.2);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.status-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  color: #fff;
+  animation: pulseStatus 2s ease-in-out infinite;
+}
+
+.status-circle.available-bg {
+  background: linear-gradient(135deg, var(--status-available), #38A169);
+}
+
+.status-circle.limited-bg {
+  background: linear-gradient(135deg, var(--status-limited), #FCD34D);
+}
+
+.status-circle.no-fuel-bg {
+  background: linear-gradient(135deg, var(--status-nofuel), #F87171);
+}
+
+.status-text {
+  text-align: left;
+}
+
+.status-label {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.status-description {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.status-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  border: 1px solid rgba(26, 26, 26, 0.06);
+  transition: all var(--t) ease;
+}
+
+.legend-item:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateX(4px);
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.legend-dot.available {
+  background: var(--status-available);
+}
+
+.legend-dot.limited {
+  background: var(--status-limited);
+}
+
+.legend-dot.no-fuel {
+  background: var(--status-nofuel);
+}
+
+.legend-info {
+  text-align: left;
+}
+
+.legend-title {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.legend-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ========================================
+   QUEUE INFORMATION SECTION
+   ======================================== */
+
+.queue-info-panel {
+  margin-top: 18px;
+  padding: 28px;
+}
+
+.queue-card {
+  background: linear-gradient(135deg, rgba(13, 115, 119, 0.05), rgba(20, 255, 236, 0.08));
+  border: 1px solid rgba(13, 115, 119, 0.15);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  transition: all var(--t) ease;
+}
+
+.queue-card:hover {
+  border-color: rgba(13, 115, 119, 0.28);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.queue-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.queue-icon {
+  font-size: 1.8rem;
+  color: var(--primary);
+}
+
+.queue-card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.queue-card-value {
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.queue-card-unit {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.queue-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(20, 255, 236, 0.08);
+  border: 1px solid rgba(20, 255, 236, 0.15);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.queue-note i {
+  color: var(--secondary);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+/* ========================================
+   QUICK STATS SECTION
+   ======================================== */
+
+.quick-stats {
+  margin-top: 18px;
+  padding: 0;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid rgba(26, 26, 26, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all var(--t) ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(13, 115, 119, 0.2);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.stat-icon.petrol-bg {
+  background: linear-gradient(135deg, #FF6B35, #FF8A5E);
+}
+
+.stat-icon.diesel-bg {
+  background: linear-gradient(135deg, #0D7377, #0A5A5D);
+}
+
+.stat-icon.status-bg {
+  background: linear-gradient(135deg, #2D6A4F, #38A169);
+}
+
+.stat-content {
+  flex: 1;
+  text-align: left;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stat-value {
+  margin-top: 8px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--text);
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulseStatus {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(13, 115, 119, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 15px rgba(13, 115, 119, 0);
+  }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 768px) {
+  .fuel-management-panel,
+  .station-status-panel,
+  .queue-info-panel {
+    padding: 20px;
+  }
+
+  .fuel-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .status-indicator {
+    flex-direction: column;
+  }
+
+  .status-circle {
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
+  }
+
+  .status-text {
+    width: 100%;
+    text-align: center;
+  }
+
+  .stat-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .stat-content {
+    text-align: center;
+  }
+
+  .legend-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .queue-card-value {
+    font-size: 2.2rem;
+  }
+
+  .auto-status-display {
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .fuel-management-panel,
+  .station-status-panel,
+  .queue-info-panel {
+    padding: 16px;
+  }
+
+  .fuel-control-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fuel-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-update {
+    width: 100%;
+  }
+
+  .queue-card-value {
+    font-size: 1.8rem;
+  }
+
+  .section-title {
+    font-size: 1.2rem;
+  }
+}
