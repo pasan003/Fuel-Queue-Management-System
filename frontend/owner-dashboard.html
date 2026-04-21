@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Owner Dashboard | Fuel Queue System</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Project CSS -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/owner-dashboard.css">
+</head>
+<body>
+  <div class="page">
+    <!-- Top Navbar with Owner-specific styling -->
+    <nav class="navbar navbar-expand-lg topbar py-3">
+      <div class="container">
+        <a class="brand" href="owner-dashboard.html" aria-label="Fuel Queue System Owner Dashboard Home">
+          <i class="fa-solid fa-gas-pump"></i>
+          <span>Fuel Queue System</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarOwner" 
+                aria-controls="navbarOwner" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarOwner">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2 mt-3 mt-lg-0">
+            <!-- Owner Dashboard Link -->
+            <li class="nav-item">
+              <a class="nav-link nav-link-custom active" href="owner-dashboard.html">
+                <i class="fa-solid fa-tachometer-alt me-2"></i>Owner Dashboard
+              </a>
+            </li>
+
+            <!-- User Dashboard Link (For owners to access customer view) -->
+            <li class="nav-item">
+              <a class="nav-link nav-link-custom" href="dashboard.html">
+                <i class="fa-solid fa-grid-2 me-2"></i>User Dashboard
+              </a>
+            </li>
+            
+            <!-- User Dropdown with proper toggle functionality -->
+            <li class="nav-item dropdown d-lg-none">
+              <button class="nav-link nav-link-custom dropdown-toggle" type="button" id="userDropdownMobile" 
+                      data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa-solid fa-user me-2"></i>User
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="userDropdownMobile">
+                <li><a class="dropdown-item" href="#" id="logoutLinkMobile" onclick="performLogout(event)">
+                  <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
+                </a></li>
+              </ul>
+            </li>
+
+            <!-- Desktop User Pill with Dropdown -->
+            <li class="nav-item d-none d-lg-block ms-lg-2 dropdown">
+              <div class="user-pill dropdown-toggle" type="button" id="userDropdownDesktop" 
+                   data-bs-toggle="dropdown" aria-expanded="false" role="button" style="cursor: pointer;">
+                <span class="avatar" id="ownerAvatar">OW</span>
+                <span id="ownerName">Owner</span>
+              </div>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdownDesktop">
+                <li><a class="dropdown-item" href="#" id="logoutLinkDesktop" onclick="performLogout(event)">
+                  <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
+                </a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container pb-5">
+      <!-- Header Section -->
+      <section class="hero animate-in">
+        <h1>Owner Dashboard</h1>
+        <p>Manage your fuel station efficiently</p>
+      </section>
+
+      <!-- Fuel Management Section - Main Feature -->
+      <section class="panel fuel-management-panel animate-in" style="animation-delay: 0.06s;">
+        <h2 class="section-title mb-4">
+          <i class="fa-solid fa-sliders"></i>
+          Fuel Management
+        </h2>
+
+        <div class="fuel-controls">
+          <!-- Petrol Toggle -->
+          <div class="fuel-control-item">
+            <div class="fuel-control-header">
+              <div class="fuel-info">
+                <i class="fa-solid fa-gas-pump fuel-icon petrol-icon"></i>
+                <div>
+                  <h3 class="fuel-type">Petrol</h3>
+                  <p class="fuel-description">Premium Petrol Availability</p>
+                </div>
+              </div>
+              <div class="form-check form-switch fuel-toggle">
+                <input class="form-check-input" type="checkbox" id="petrolToggle" data-fuel="petrol" checked>
+                <label class="form-check-label" for="petrolToggle"></label>
+              </div>
+            </div>
+            <div class="fuel-status-mini" id="petrolStatus">
+              <span class="status-badge available">
+                <i class="fa-solid fa-check-circle"></i> Available
+              </span>
+            </div>
+          </div>
+
+          <!-- Diesel Toggle -->
+          <div class="fuel-control-item">
+            <div class="fuel-control-header">
+              <div class="fuel-info">
+                <i class="fa-solid fa-oil-can fuel-icon diesel-icon"></i>
+                <div>
+                  <h3 class="fuel-type">Diesel</h3>
+                  <p class="fuel-description">Premium Diesel Availability</p>
+                </div>
+              </div>
+              <div class="form-check form-switch fuel-toggle">
+                <input class="form-check-input" type="checkbox" id="dieselToggle" data-fuel="diesel" checked>
+                <label class="form-check-label" for="dieselToggle"></label>
+              </div>
+            </div>
+            <div class="fuel-status-mini" id="dieselStatus">
+              <span class="status-badge available">
+                <i class="fa-solid fa-check-circle"></i> Available
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="fuel-actions mt-4">
+          <button class="btn btn-update" id="saveFuelBtn">
+            <i class="fa-solid fa-save me-2"></i>Save Changes
+          </button>
+          <span class="last-saved-time" id="lastSaved"></span>
+        </div>
+      </section>
+
+      <!-- Station Status Card -->
+      <section class="panel station-status-panel animate-in" style="animation-delay: 0.12s;">
+        <div class="row g-3">
+          <!-- Left: Station Details -->
+          <div class="col-12 col-lg-6">
+            <h2 class="section-title mb-4">
+              <i class="fa-solid fa-info-circle"></i>
+              Station Information
+            </h2>
+
+            <div class="station-info-card">
+              <div class="info-item">
+                <div class="info-label">
+                  <i class="fa-solid fa-store"></i>
+                  Station Name
+                </div>
+                <div class="info-value" id="stationNameDisplay">City Fuel Point</div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="info-item">
+                <div class="info-label">
+                  <i class="fa-solid fa-location-dot"></i>
+                  Location
+                </div>
+                <div class="info-value" id="stationLocationDisplay">Ward Place, Colombo 07</div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="info-item">
+                <div class="info-label">
+                  <i class="fa-solid fa-calendar-days"></i>
+                  Last Updated
+                </div>
+                <div class="info-value" id="stationLastUpdated">Just now</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Auto Status Display -->
+          <div class="col-12 col-lg-6">
+            <h2 class="section-title mb-4">
+              <i class="fa-solid fa-signal"></i>
+              Station Status
+            </h2>
+
+            <div class="auto-status-display">
+              <div class="status-indicator" id="mainStatusIndicator">
+                <div class="status-circle available-bg">
+                  <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div class="status-text">
+                  <div class="status-label" id="statusLabel">Available</div>
+                  <div class="status-description" id="statusDescription">Both fuels available, queue is normal</div>
+                </div>
+              </div>
+
+              <!-- Status Legend -->
+              <div class="status-legend mt-4">
+                <div class="legend-item">
+                  <div class="legend-dot available"></div>
+                  <div class="legend-info">
+                    <div class="legend-title">Available</div>
+                    <div class="legend-desc">All fuels available & queue < 10</div>
+                  </div>
+                </div>
+
+                <div class="legend-item">
+                  <div class="legend-dot limited"></div>
+                  <div class="legend-info">
+                    <div class="legend-title">Limited</div>
+                    <div class="legend-desc">Limited fuel or high queue</div>
+                  </div>
+                </div>
+
+                <div class="legend-item">
+                  <div class="legend-dot no-fuel"></div>
+                  <div class="legend-info">
+                    <div class="legend-title">No Fuel</div>
+                    <div class="legend-desc">All fuels unavailable</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Queue Information (Read-only) -->
+      <section class="panel queue-info-panel animate-in" style="animation-delay: 0.18s;">
+        <h2 class="section-title mb-4">
+          <i class="fa-solid fa-users"></i>
+          Queue Information
+        </h2>
+
+        <div class="row g-3">
+          <!-- Queue Length Card -->
+          <div class="col-12 col-md-6">
+            <div class="queue-card">
+              <div class="queue-card-header">
+                <i class="fa-solid fa-people-line queue-icon"></i>
+                <h3>Queue Length</h3>
+              </div>
+              <div class="queue-card-value" id="queueLength">24</div>
+              <div class="queue-card-unit">vehicles waiting</div>
+            </div>
+          </div>
+
+          <!-- Waiting Time Card -->
+          <div class="col-12 col-md-6">
+            <div class="queue-card">
+              <div class="queue-card-header">
+                <i class="fa-solid fa-hourglass-end queue-icon"></i>
+                <h3>Estimated Wait</h3>
+              </div>
+              <div class="queue-card-value" id="waitingTime">18</div>
+              <div class="queue-card-unit">minutes</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="queue-note mt-3">
+          <i class="fa-solid fa-info-circle"></i>
+          <span><strong>Note:</strong> Queue information is updated in real-time by customers. You can only view this data.</span>
+        </div>
+      </section>
+
+      <!-- Map Placeholder Section -->
+      <section class="panel map-card animate-in" style="animation-delay: 0.24s;">
+        <h2 class="section-title mb-4">
+          <i class="fa-solid fa-map"></i>
+          Station Map
+        </h2>
+        <div class="map-placeholder">
+          <div>
+            <i class="fa-solid fa-map-location-dot"></i>
+            <div class="title">Map Integration (Future Feature)</div>
+            <div class="sub">Google Maps location will be integrated here in the future</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Stats -->
+      <section class="quick-stats animate-in" style="animation-delay: 0.30s;">
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon petrol-bg">
+                <i class="fa-solid fa-gas-pump"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">Petrol Available</div>
+                <div class="stat-value" id="petrolStat">Yes</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon diesel-bg">
+                <i class="fa-solid fa-oil-can"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">Diesel Available</div>
+                <div class="stat-value" id="dieselStat">Yes</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon status-bg">
+                <i class="fa-solid fa-gauge" id="statusIcon"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">Current Status</div>
+                <div class="stat-value" id="statusStat">Available</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/owner-dashboard.js"></script>
+</body>
+</html>

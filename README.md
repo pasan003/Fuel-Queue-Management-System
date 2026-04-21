@@ -38,20 +38,21 @@ Station administrators/owners can:
 
 ## 🚀 Features
 
-### User Features (Planned/In Progress)
-- User Registration & Login (Frontend UI Completed)
-- Search fuel stations by location
-- View queue status
-- View fuel availability (Petrol/Diesel)
-- Submit queue reports (with optional images)
-- Receive alerts
+### User Features
+- **User Registration & Login (Completed)** - Role-based authentication (Customer/Owner)
+- **Search fuel stations by location (Completed)**
+- **View queue status (Completed)** - Shows queue length and estimated wait times
+- **View fuel availability (Completed)** - Displays Petrol/Diesel availability
+- Submit queue reports (with optional images) (Planned)
+- Receive alerts (Planned)
 
-### Admin/Owner Features (Planned/In Progress)
-- Station Registration (Frontend UI Completed)
-- Update fuel availability
-- Update queue status
-- Manage reports
-- Monitor user submissions
+### Admin/Owner Features
+- **Station Registration (Completed)**
+- **Owner Dashboard (Completed)**
+- **Update fuel availability (Completed)** - Toggle Petrol/Diesel availability
+- Update queue status (In Progress)
+- Manage reports (Planned)
+- Monitor user submissions (Planned)
 
 ---
 
@@ -77,17 +78,18 @@ Station administrators/owners can:
 - JavaScript (Vanilla)
 - FontAwesome (Icons)
 
-### Backend (Planned)
+### Backend
 - PHP
 
 ### Database
-- MySQL
+- File-based JSON storage (for early development/fallback)
+- MySQL (Schema provided for future migration)
 
 ---
 
 ## 🏗️ System Architecture
 
-User Browser → Frontend (HTML/CSS/JS) → PHP Server → MySQL Database
+User Browser → Frontend (HTML/CSS/JS) → PHP Server → File Storage / MySQL Database
 
 ---
 
@@ -96,18 +98,21 @@ User Browser → Frontend (HTML/CSS/JS) → PHP Server → MySQL Database
 Fuel-Queue-Management-System/
 │
 ├── frontend/
-│   ├── css/            # Stylesheets
-│   ├── js/             # Client-side logic
-│   ├── login.html      # Login interface
-│   ├── register.html   # Registration interface
-│   └── dashboard.html  # Main dashboard
+│   ├── css/                  # Stylesheets (auth, dashboard, owner-dashboard, main)
+│   ├── js/                   # Client-side logic (auth, dashboard, owner-dashboard)
+│   ├── login.html            # Login interface
+│   ├── register.html         # Registration interface
+│   ├── dashboard.html        # Customer dashboard
+│   ├── owner-dashboard.html  # Station owner dashboard
+│   └── user_dashboard.html   # Redirect utility
 ├── backend/
-│   ├── config.php      # Database connection
-│   ├── login.php       # Login handler
-│   └── register.php    # Registration handler
+│   ├── config.php            # Server config & File-based DB logic
+│   ├── login.php             # Login API handler
+│   ├── register.php          # Registration API handler
+│   └── data/                 # JSON file storage for user/station data
 ├── database/
-│   └── fqms.sql        # Database schema
-├── docs/               # Documentation
+│   └── fqms.sql              # MySQL Database schema
+├── docs/                     # Documentation
 └── README.md
 ```
 
@@ -145,26 +150,26 @@ Follow these steps to set up and run the project locally:
 ---
 
 ## 🚧 Current Development Status
-- **Frontend**: Initial UI prototypes for `login.html` and `register.html` have been completed, featuring a responsive design, animations, and basic JavaScript form validation.
+- **Frontend**: UI completed for `login.html`, `register.html`, `dashboard.html` (Customer), and `owner-dashboard.html`. The UI is responsive, features modern styling, and includes JavaScript interactions for validation, filtering, and fuel management. Role-based routing is fully implemented.
+- **Backend**: Basic PHP backend is implemented to handle authentication using a simple file-based JSON storage system (`backend/data/users.json`) to keep the project runnable without strict database dependencies initially.
 - **Database**: The MySQL database schema (`fqms.sql`) has been designed, including tables for users, stations, fuel availability, queues, and reports.
-- **Backend**: PHP backend development is pending.
 
 ---
 
 ## 📅 Development Plan
 
 - Week 1: Planning & Database Design (Completed)
-- Week 2–3: Frontend Development & Authentication (In Progress)
-- Week 4: Core Features Implementation
-- Week 5: Notifications & Admin Dashboard
+- Week 2–3: Frontend Development & Authentication (Completed)
+- Week 4: Core Features Implementation (Owner Dashboard, Fuel Management) (Completed)
+- Week 5: Notifications & Full Backend Integration
 - Week 6: Testing, Integration & Deployment
 
 ---
 
 ## 👥 Team Contributions
 
-- Frontend Development: UI design, responsiveness, form validation
-- Backend Development: PHP logic, authentication, APIs
+- Frontend Development: UI design, responsiveness, form validation, dashboards
+- Backend Development: PHP logic, authentication, file-based storage APIs
 - Database & Testing: MySQL design, testing, debugging
 
 ---

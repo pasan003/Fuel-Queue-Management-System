@@ -267,28 +267,37 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  border-radius: 999px;
+  padding: 10px 16px;
+  border-radius: 12px;
   font-weight: 900;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   white-space: nowrap;
+  transition: all var(--t) ease;
+  cursor: pointer;
+  min-height: 40px;
+  justify-content: center;
+}
+
+.status-pill:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .status-available {
   background: rgba(45, 106, 79, 0.12);
-  border: 1px solid rgba(45, 106, 79, 0.25);
+  border: 2px solid rgba(45, 106, 79, 0.2);
   color: var(--status-available);
 }
 
 .status-limited {
   background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.28);
+  border: 2px solid rgba(245, 158, 11, 0.28);
   color: var(--status-limited);
 }
 
 .status-nofuel {
   background: rgba(216, 71, 39, 0.12);
-  border: 1px solid rgba(216, 71, 39, 0.26);
+  border: 2px solid rgba(216, 71, 39, 0.26);
   color: var(--status-nofuel);
 }
 
@@ -335,15 +344,25 @@ body {
 .cta {
   border: none;
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 12px 16px;
   background: linear-gradient(135deg, var(--accent), #FF8A5E);
   color: #fff;
   font-weight: 900;
   transition: all var(--t) ease;
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  font-size: 0.95rem;
 }
 
-.cta:hover { transform: translateY(-1px) scale(1.03); box-shadow: var(--shadow-md); }
+.cta:hover { 
+  transform: translateY(-2px) scale(1.03); 
+  box-shadow: var(--shadow-md); 
+  color: #fff;
+}
+
+.cta:active {
+  transform: translateY(0) scale(0.98);
+}
 
 .empty-state {
   border-radius: var(--radius);
@@ -363,6 +382,26 @@ body {
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulseStatus {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(13, 115, 119, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 15px rgba(13, 115, 119, 0);
+  }
 }
 
 .animate-in { animation: fadeInUp 0.35s ease both; }

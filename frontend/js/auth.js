@@ -34,6 +34,37 @@ function togglePasswordBy(inputId, iconEl) {
   }
 }
 
+/**
+ * Determine redirect URL based on user type
+ * @param {string} userType - "customer" or "owner"
+ * @returns {string} redirect URL
+ */
+function getRedirectURL(userType) {
+  if (userType === "owner") {
+    return "owner-dashboard.html";
+  }
+  return "dashboard.html"; // Default to customer dashboard
+}
+
+/**
+ * Store user session in localStorage
+ * @param {string} userType - "customer" or "owner"
+ * @param {string} username - User's username
+ */
+function storeUserSession(userType, username) {
+  localStorage.setItem("userType", userType);
+  localStorage.setItem("username", username);
+  localStorage.setItem("loginTime", new Date().toISOString());
+}
+
+/**
+ * Get user type from localStorage
+ * @returns {string|null} "customer", "owner", or null if not logged in
+ */
+function getUserType() {
+  return localStorage.getItem("userType");
+}
+
 function initLogin() {
   const form = document.getElementById("loginForm");
   if (!form) return;
@@ -70,12 +101,32 @@ function initLogin() {
 
     try {
       const result = await postForm("../backend/login.php", form);
+      
+      // Get user type from backend response
+      const userType = result.user?.userType || "customer";
+      const fullName = result.user?.fullName || username;
+      
+      // Store user session
+      storeUserSession(userType, fullName);
+      
       alert(result.message || "Login successful");
-      window.location.href = "dashboard.html";
+      
+      // Redirect based on user type
+      const redirectURL = getRedirectURL(userType);
+      window.location.href = redirectURL;
     } catch (err) {
       alert(err?.message || "Login failed");
     }
   });
+}
+
+/**
+ * Clear user session from localStorage (logout)
+ */
+function clearUserSession() {
+  localStorage.removeItem("userType");
+  localStorage.removeItem("username");
+  localStorage.removeItem("loginTime");
 }
 
 function initRegister() {
@@ -170,7 +221,15 @@ function initRegister() {
 
     try {
       const result = await postForm("../backend/register.php", form);
+      
+      // Store user type after successful registration
+      const fullNameValue = String(document.getElementById("fullName")?.value || "").trim();
+      storeUserSession(type, fullNameValue);
+      
       alert(result.message || "Registration successful");
+      
+      // For new registrations, redirect to login to authenticate
+      // In production, you might auto-login here
       window.location.href = "login.html";
     } catch (err) {
       alert(err?.message || "Registration failed");

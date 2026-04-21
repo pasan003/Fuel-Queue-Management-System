@@ -215,12 +215,32 @@ function setActiveFilter(filter) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const demoName = "User";
+  // Check if user is logged in
+  const userType = localStorage.getItem("userType");
+  const username = localStorage.getItem("username");
+  
+  if (!userType || !username) {
+    // User not logged in, redirect to login
+    window.location.href = "login.html";
+    return;
+  }
+
+  // Display user information in navbar
+  const demoName = username || "User";
   const nameEl = document.getElementById("userName");
   const avatarEl = document.getElementById("userAvatar");
   if (nameEl) nameEl.textContent = demoName;
   if (avatarEl) avatarEl.textContent = demoName.split(" ").map((x) => x[0]).join("").slice(0, 2).toUpperCase();
 
+  // Show owner dashboard link if user is owner
+  const ownerDashboardLink = document.getElementById("ownerDashboardLink");
+  if (ownerDashboardLink) {
+    if (userType === "owner") {
+      ownerDashboardLink.style.display = "block";
+    }
+  }
+
+  // Search functionality
   const search = document.getElementById("searchInput");
   if (search) {
     search.addEventListener("input", (e) => {
@@ -229,18 +249,35 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Filter buttons
   document.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.addEventListener("click", () => setActiveFilter(btn.getAttribute("data-filter")));
   });
 
-  const logoutLink = document.getElementById("logoutLink");
-  if (logoutLink) {
-    logoutLink.addEventListener("click", (e) => {
-      const ok = confirm("Do you want to logout?");
-      if (!ok) e.preventDefault();
-    });
-  }
-
   render();
 });
+
+/**
+ * Perform logout with session clearing
+ * @param {Event} event - Click event from logout link
+ */
+function performLogout(event) {
+  event.preventDefault();
+  
+  const ok = confirm("Do you want to logout?");
+  if (ok) {
+    // Clear user session using auth.js function if available
+    if (typeof clearUserSession === "function") {
+      clearUserSession();
+    } else {
+      // Fallback: clear manually
+      localStorage.removeItem("userType");
+      localStorage.removeItem("username");
+      localStorage.removeItem("loginTime");
+    }
+    
+    // Redirect to login
+    window.location.href = "login.html";
+  }
+}
 
