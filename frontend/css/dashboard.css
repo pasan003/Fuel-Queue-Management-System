@@ -24,7 +24,7 @@
 
 body {
   min-height: 100vh;
-  font-family: "Segoe UI", Arial, sans-serif;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
   color: var(--text);
   background: var(--bg);
 }
@@ -231,7 +231,8 @@ body {
 .section-title i { color: var(--primary); }
 .results-meta { color: var(--muted); }
 
-.station-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+/* Card wrapper (not an anchor — details use the Details button) */
+.station-link { color: inherit; display: block; height: 100%; cursor: default; }
 
 .station-card {
   height: 100%;

@@ -1,73 +1,23 @@
-const stationsData = [
+/**
+ * Customer dashboard: loads station cards from PHP + MySQL via stations.php.
+ */
+
+/** Demo fallback if API is unreachable (offline dev only). */
+const FALLBACK_STATIONS = [
   {
-    id: 1,
-    name: "CPC Fuel Station - Colombo 07",
-    location: "Ward Place, Colombo",
-    status: "available",
-    petrol: true,
-    diesel: true,
-    queueLength: 24,
-    waitingTimeMins: 18,
-    lastUpdated: "5 min ago"
-  },
-  {
-    id: 2,
-    name: "LIOC Fuel Station - Borella",
-    location: "Maradana Rd, Colombo",
-    status: "limited",
-    petrol: true,
-    diesel: false,
-    queueLength: 58,
-    waitingTimeMins: 42,
-    lastUpdated: "12 min ago"
-  },
-  {
-    id: 3,
-    name: "CPC Fuel Station - Nugegoda",
-    location: "High Level Rd, Nugegoda",
-    status: "nofuel",
-    petrol: false,
-    diesel: false,
-    queueLength: 0,
-    waitingTimeMins: 0,
-    lastUpdated: "20 min ago"
-  },
-  {
-    id: 4,
-    name: "LIOC Fuel Station - Dehiwala",
-    location: "Galle Rd, Dehiwala",
-    status: "available",
-    petrol: false,
-    diesel: true,
-    queueLength: 33,
-    waitingTimeMins: 25,
-    lastUpdated: "8 min ago"
-  },
-  {
-    id: 5,
-    name: "CPC Fuel Station - Rajagiriya",
-    location: "Buthgamuwa Rd, Rajagiriya",
+    station_id: 1,
+    station_name: "Demo Station (offline)",
+    location: "Import database/fqms.sql and ensure MySQL is running",
     status: "limited",
     petrol: true,
     diesel: true,
-    queueLength: 71,
-    waitingTimeMins: 55,
-    lastUpdated: "3 min ago"
+    queue_length: 0,
+    waiting_time: 0,
+    last_updated_iso: null,
   },
-  {
-    id: 6,
-    name: "LIOC Fuel Station - Kotte",
-    location: "Sri Jayawardenepura Kotte",
-    status: "available",
-    petrol: true,
-    diesel: false,
-    queueLength: 19,
-    waitingTimeMins: 14,
-    lastUpdated: "7 min ago"
-  }
 ];
 
-const state = { query: "", filter: "all" };
+const state = { query: "", filter: "all", stations: [], loadError: null };
 
 function statusLabel(status) {
   if (status === "available") return "Available";
@@ -105,18 +55,36 @@ function formatWait(mins) {
   return mins === 0 ? "—" : `${mins} mins`;
 }
 
+/** Human-readable relative time from MySQL ISO datetime. */
+function formatLastUpdated(iso) {
+  if (!iso) return "—";
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return "—";
+  const diffMs = Date.now() - t;
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins === 1) return "1 min ago";
+  if (diffMins < 60) return `${diffMins} min ago`;
+  const diffH = Math.floor(diffMins / 60);
+  if (diffH === 1) return "1 hour ago";
+  if (diffH < 24) return `${diffH} hours ago`;
+  const diffD = Math.floor(diffH / 24);
+  return diffD === 1 ? "Yesterday" : `${diffD} days ago`;
+}
+
 function stationCardHTML(station) {
-  const href = `station_details.html?stationId=${station.id}`;
+  const last = formatLastUpdated(station.last_updated_iso);
+  const id = station.station_id;
   return `
     <div class="col-12 col-lg-6">
-      <a class="station-link" href="${href}" data-station-id="${station.id}" aria-label="Open station ${station.name}">
+      <div class="station-link" data-station-id="${id}">
         <div class="station-card">
           <div class="station-top">
             <div>
-              <h3 class="station-name">${station.name}</h3>
+              <h3 class="station-name">${station.station_name}</h3>
               <div class="station-location">
                 <i class="fa-solid fa-location-dot"></i>
-                <span>${station.location}</span>
+                <span>${station.location || "—"}</span>
               </div>
             </div>
             <div class="status-pill ${statusClass(station.status)}">
@@ -136,11 +104,11 @@ function stationCardHTML(station) {
             </div>
             <div class="meta">
               <div class="k"><i class="fa-solid fa-users me-2"></i>Queue Length</div>
-              <div class="v">${formatQueue(station.queueLength)}</div>
+              <div class="v">${formatQueue(station.queue_length)}</div>
             </div>
             <div class="meta">
               <div class="k"><i class="fa-solid fa-clock me-2"></i>Waiting Time</div>
-              <div class="v">${formatWait(station.waitingTimeMins)}</div>
+              <div class="v">${formatWait(station.waiting_time)}</div>
             </div>
           </div>
 
@@ -149,28 +117,54 @@ function stationCardHTML(station) {
           <div class="station-bottom">
             <div class="last-updated">
               <i class="fa-regular fa-clock"></i>
-              Last updated: <span>${station.lastUpdated}</span>
+              Last updated: <span>${last}</span>
             </div>
-            <button class="cta" type="button" data-open="${station.id}">
-              <i class="fa-solid fa-arrow-right me-2"></i>Open
+            <button class="cta" type="button" data-open="${id}">
+              <i class="fa-solid fa-circle-info me-2"></i>Details
             </button>
           </div>
         </div>
-      </a>
+      </div>
     </div>
   `;
 }
 
 function applyFilters() {
   const q = state.query.trim().toLowerCase();
-  return stationsData.filter((s) => {
+  return state.stations.filter((s) => {
     const matchesQuery =
       q === "" ||
-      s.name.toLowerCase().includes(q) ||
-      s.location.toLowerCase().includes(q);
+      String(s.station_name || "")
+        .toLowerCase()
+        .includes(q) ||
+      String(s.location || "")
+        .toLowerCase()
+        .includes(q);
 
     const matchesFilter = state.filter === "all" || s.status === state.filter;
     return matchesQuery && matchesFilter;
+  });
+}
+
+function wireOpenButtons(grid) {
+  grid.querySelectorAll("[data-open]").forEach((btn) => {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = Number(this.getAttribute("data-open"));
+      const station = state.stations.find((x) => x.station_id === id);
+      if (!station) return;
+      alert(
+        `Station: ${station.station_name}\n` +
+          `Location: ${station.location || "—"}\n` +
+          `Status: ${statusLabel(station.status)}\n` +
+          `Petrol: ${station.petrol ? "Yes" : "No"}\n` +
+          `Diesel: ${station.diesel ? "Yes" : "No"}\n` +
+          `Queue: ${station.queue_length} vehicles\n` +
+          `Waiting: ${station.waiting_time} mins\n` +
+          `Last updated: ${formatLastUpdated(station.last_updated_iso)}`
+      );
+    });
   });
 }
 
@@ -183,27 +177,14 @@ function render() {
   const filtered = applyFilters();
   grid.innerHTML = filtered.map(stationCardHTML).join("");
 
-  emptyWrap.classList.toggle("d-none", filtered.length !== 0);
-  resultsMeta.textContent = `${filtered.length} station${filtered.length === 1 ? "" : "s"} • ${filterLabel(state.filter)}`;
+  let meta = `${filtered.length} station${filtered.length === 1 ? "" : "s"} • ${filterLabel(state.filter)}`;
+  if (state.loadError) {
+    meta += ` • ${state.loadError}`;
+  }
+  resultsMeta.textContent = meta;
 
-  grid.querySelectorAll("[data-open]").forEach((btn) => {
-    btn.addEventListener("click", function (e) {
-      e.preventDefault();
-      const id = Number(this.getAttribute("data-open"));
-      const station = stationsData.find((x) => x.id === id);
-      if (!station) return;
-      alert(
-        `Station: ${station.name}\n` +
-          `Location: ${station.location}\n` +
-          `Status: ${statusLabel(station.status)}\n` +
-          `Petrol: ${station.petrol ? "Yes" : "No"}\n` +
-          `Diesel: ${station.diesel ? "Yes" : "No"}\n` +
-          `Queue: ${station.queueLength} vehicles\n` +
-          `Waiting: ${station.waitingTimeMins} mins\n` +
-          `Last Updated: ${station.lastUpdated}`
-      );
-    });
-  });
+  emptyWrap.classList.toggle("d-none", filtered.length !== 0);
+  wireOpenButtons(grid);
 }
 
 function setActiveFilter(filter) {
@@ -214,33 +195,55 @@ function setActiveFilter(filter) {
   render();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Check if user is logged in
+async function loadStationsFromApi() {
+  state.loadError = null;
+  try {
+    const data = await apiGet("../backend/stations.php");
+    if (data.ok && Array.isArray(data.stations)) {
+      state.stations = data.stations;
+      return;
+    }
+    throw new Error(data.message || "Invalid response");
+  } catch (err) {
+    if (err && (err.message === "Authentication required" || String(err.message || "").includes("401"))) {
+      clearUserSession();
+      window.location.href = "login.html";
+      return;
+    }
+    state.stations = FALLBACK_STATIONS;
+    state.loadError = "Using offline preview — connect MySQL and log in";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
   const userType = localStorage.getItem("userType");
   const username = localStorage.getItem("username");
-  
+
   if (!userType || !username) {
-    // User not logged in, redirect to login
     window.location.href = "login.html";
     return;
   }
 
-  // Display user information in navbar
   const demoName = username || "User";
   const nameEl = document.getElementById("userName");
   const avatarEl = document.getElementById("userAvatar");
   if (nameEl) nameEl.textContent = demoName;
-  if (avatarEl) avatarEl.textContent = demoName.split(" ").map((x) => x[0]).join("").slice(0, 2).toUpperCase();
-
-  // Show owner dashboard link if user is owner
-  const ownerDashboardLink = document.getElementById("ownerDashboardLink");
-  if (ownerDashboardLink) {
-    if (userType === "owner") {
-      ownerDashboardLink.style.display = "block";
-    }
+  if (avatarEl) {
+    avatarEl.textContent = demoName
+      .split(" ")
+      .map((x) => x[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
   }
 
-  // Search functionality
+  const ownerDashboardLink = document.getElementById("ownerDashboardLink");
+  if (ownerDashboardLink && userType === "owner") {
+    ownerDashboardLink.style.display = "block";
+  }
+
+  await loadStationsFromApi();
+
   const search = document.getElementById("searchInput");
   if (search) {
     search.addEventListener("input", (e) => {
@@ -249,7 +252,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Filter buttons
   document.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.addEventListener("click", () => setActiveFilter(btn.getAttribute("data-filter")));
   });
@@ -258,26 +260,26 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
- * Perform logout with session clearing
- * @param {Event} event - Click event from logout link
+ * Logout: destroy PHP session then clear local keys.
+ * @param {Event} event
  */
-function performLogout(event) {
+async function performLogout(event) {
   event.preventDefault();
-  
-  const ok = confirm("Do you want to logout?");
-  if (ok) {
-    // Clear user session using auth.js function if available
-    if (typeof clearUserSession === "function") {
-      clearUserSession();
-    } else {
-      // Fallback: clear manually
-      localStorage.removeItem("userType");
-      localStorage.removeItem("username");
-      localStorage.removeItem("loginTime");
-    }
-    
-    // Redirect to login
-    window.location.href = "login.html";
-  }
-}
 
+  const ok = confirm("Do you want to logout?");
+  if (!ok) return;
+
+  await logoutRemote();
+
+  if (typeof clearUserSession === "function") {
+    clearUserSession();
+  } else {
+    localStorage.removeItem("userType");
+    localStorage.removeItem("username");
+    localStorage.removeItem("loginTime");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userEmail");
+  }
+
+  window.location.href = "login.html";
+}
