@@ -1,189 +1,173 @@
 # Fuel Queue Management System
 
-## 📌 Project Overview
-The Fuel Queue Management System is a web-based platform designed to help users check real-time fuel availability and queue status at nearby fuel stations.
-
-This system aims to reduce waiting time, avoid unnecessary travel, and improve fuel distribution awareness.
+Web application for checking fuel availability and queue status at fuel stations. Customers browse stations on a dashboard; station owners manage fuel availability for their own station through an owner dashboard.
 
 ---
 
-## 🚨 Problem Statement
-Sri Lanka has experienced fuel shortages causing:
+## Features (current)
 
-- Long queues at fuel stations
-- Lack of fuel availability information
-- Traffic congestion
-- Time and fuel wastage
+### Authentication
 
-Currently, there is no centralized system to check real-time fuel queue status.
+- **Register** as **Customer** or **Owner** (national ID, email, hashed password).
+- **Login** with **email** and password; PHP session plus browser `fetch` with credentials.
+- **Logout** clears the server session and client-side keys.
+- **Role routing**: customers land on the user dashboard; owners land on the owner dashboard. Owners can open the **User Dashboard** from the navbar to see the same station list as customers.
 
----
+### User dashboard (`frontend/dashboard.html`)
 
-## 💡 Proposed Solution
-This system allows users to:
+- Lists **all stations** from MySQL with **petrol/diesel availability**, **queue length**, **estimated wait**, and **computed status** (Available / Limited / No Fuel).
+- Search and filter controls (unchanged UX; data is live from the API).
+- Map area remains a **placeholder** for future Google Maps integration.
 
-- Check nearby fuel stations
-- View queue length and waiting time
-- Check petrol and diesel availability
-- Submit queue reports
-- Receive notifications when fuel is available
+### Owner dashboard (`frontend/owner-dashboard.html`)
 
-Station administrators/owners can:
-
-- Update fuel availability
-- Update queue status
-- Manage reports
+- Loads the **station linked to the logged-in owner** (created at registration).
+- **Fuel toggles** persist to `fuel_availability` via `backend/owner_station.php`.
+- Queue metrics are **read from the database** (seed/demo values until customer reporting exists).
 
 ---
 
-## 🚀 Features
+## Tech stack
 
-### User Features
-- **User Registration & Login (Completed)** - Role-based authentication (Customer/Owner)
-- **Search fuel stations by location (Completed)**
-- **View queue status (Completed)** - Shows queue length and estimated wait times
-- **View fuel availability (Completed)** - Displays Petrol/Diesel availability
-- Submit queue reports (with optional images) (Planned)
-- Receive alerts (Planned)
-
-### Admin/Owner Features
-- **Station Registration (Completed)**
-- **Owner Dashboard (Completed)**
-- **Update fuel availability (Completed)** - Toggle Petrol/Diesel availability
-- Update queue status (In Progress)
-- Manage reports (Planned)
-- Monitor user submissions (Planned)
+| Layer | Technologies |
+|--------|----------------|
+| Frontend | HTML5, CSS3, Bootstrap 5, vanilla JavaScript |
+| Backend | PHP 8.x (PDO, sessions, JSON APIs) |
+| Database | MySQL 8.x (InnoDB), schema in `database/fqms.sql` |
 
 ---
 
-## 🧭 User Flow
+## Folder structure
 
-1. User visits the website
-2. User registers or logs in (Customer or Owner)
-3. User searches for fuel stations
-4. System displays nearby stations
-5. User checks queue and fuel status
-6. User decides where to go
-7. User can submit reports
-8. Owner updates official data
-
----
-
-## 🛠️ Technologies Used
-
-### Frontend
-- HTML5
-- CSS3
-- Bootstrap 5
-- JavaScript (Vanilla)
-- FontAwesome (Icons)
-
-### Backend
-- PHP
-
-### Database
-- File-based JSON storage (for early development/fallback)
-- MySQL (Schema provided for future migration)
-
----
-
-## 🏗️ System Architecture
-
-User Browser → Frontend (HTML/CSS/JS) → PHP Server → File Storage / MySQL Database
-
----
-
-## 🗂️ Project Structure
 ```text
 Fuel-Queue-Management-System/
-│
 ├── frontend/
-│   ├── css/                  # Stylesheets (auth, dashboard, owner-dashboard, main)
-│   ├── js/                   # Client-side logic (auth, dashboard, owner-dashboard)
-│   ├── login.html            # Login interface
-│   ├── register.html         # Registration interface
-│   ├── dashboard.html        # Customer dashboard
-│   ├── owner-dashboard.html  # Station owner dashboard
-│   └── user_dashboard.html   # Redirect utility
+│   ├── css/           # main, auth, dashboard, owner-dashboard
+│   ├── js/            # auth.js, dashboard.js, owner-dashboard.js
+│   ├── login.html
+│   ├── register.html
+│   ├── dashboard.html       # Customer view
+│   ├── owner-dashboard.html # Owner view
+│   └── user_dashboard.html  # Redirects to dashboard.html
 ├── backend/
-│   ├── config.php            # Server config & File-based DB logic
-│   ├── login.php             # Login API handler
-│   ├── register.php          # Registration API handler
-│   └── data/                 # JSON file storage for user/station data
+│   ├── config.php           # PDO, helpers, optional legacy JSON paths
+│   ├── login.php
+│   ├── register.php
+│   ├── logout.php
+│   ├── stations.php         # GET — station list (requires login)
+│   └── owner_station.php    # GET/POST — owner station + fuel save
 ├── database/
-│   └── fqms.sql              # MySQL Database schema
-├── docs/                     # Documentation
+│   └── fqms.sql             # Schema + demo seed row
+├── docs/
+│   └── Rules                # Team guidelines
 └── README.md
 ```
 
----
-
-## ⚙️ How to Run This Project
-
-Follow these steps to set up and run the project locally:
-
-### 1. Prerequisites
-- Install a local server environment like **XAMPP**, **WAMP**, or **MAMP**.
-- Ensure you have **MySQL** and **PHP** (v7.4+) installed.
-
-### 2. Set Up the Project
-- Clone the repository or download the source code.
-- Place the project folder inside your server's root directory (e.g., `C:\xampp\htdocs\` for XAMPP or `C:\wamp64\www\` for WAMP).
-
-### 3. Database Configuration (Optional for now)
-- The project currently uses a **JSON-based storage system** (`backend/data/users.json`) for ease of development.
-- However, a MySQL schema is provided in `database/fqms.sql` for future migration.
-- If you want to prepare the database:
-  - Open **phpMyAdmin**.
-  - Create a new database named `fqms`.
-  - Import the SQL file located at `database/fqms.sql`.
-
-### 4. Configure Backend
-- No configuration is required for the current JSON storage.
-- If migrating to MySQL in the future, you would update `backend/config.php`.
-
-### 5. Launch the Application
-- Start your Apache server.
-- Open your browser and navigate to:
-  `http://localhost/Fuel-Queue-Management-System/frontend/login.html`
+Legacy JSON helpers remain in `config.php` for compatibility; **authentication and dashboards use MySQL**.
 
 ---
 
-## 🚧 Current Development Status
-- **Frontend**: UI completed for `login.html`, `register.html`, `dashboard.html` (Customer), and `owner-dashboard.html`. The UI is responsive, features modern styling, and includes JavaScript interactions for validation, filtering, and fuel management. Role-based routing is fully implemented.
-- **Backend**: Basic PHP backend is implemented to handle authentication using a simple file-based JSON storage system (`backend/data/users.json`) to keep the project runnable without strict database dependencies initially.
-- **Database**: The MySQL database schema (`fqms.sql`) has been designed, including tables for users, stations, fuel availability, queues, and reports.
+## Prerequisites
+
+- **XAMPP**, **WAMP**, **MAMP**, or similar: Apache + PHP **8.0+** + **MySQL**.
+- Project folder served from the web root (e.g. `htdocs/Fuel-Queue-Management-System/`).
 
 ---
 
-## 📅 Development Plan
+## Database setup
 
-- Week 1: Planning & Database Design (Completed)
-- Week 2–3: Frontend Development & Authentication (Completed)
-- Week 4: Core Features Implementation (Owner Dashboard, Fuel Management) (Completed)
-- Week 5: Notifications & Full Backend Integration
-- Week 6: Testing, Integration & Deployment
+1. Start **MySQL** (e.g. from XAMPP Control Panel).
+2. Open **phpMyAdmin** (or the MySQL client).
+3. Import **`database/fqms.sql`** (creates database `fqms`, tables, fuel types Petrol/Diesel, and one demo station).
+
+Alternatively:
+
+```bash
+mysql -u root -p < database/fqms.sql
+```
+
+### Configuration
+
+Default PDO settings in `backend/config.php` assume:
+
+- Host: `127.0.0.1`
+- Database: `fqms`
+- User: `root`
+- Password: *(empty)*
+
+Override without editing code using environment variables:
+
+- `FQMS_DB_HOST`
+- `FQMS_DB_NAME`
+- `FQMS_DB_USER`
+- `FQMS_DB_PASS`
 
 ---
 
-## 👥 Team Contributions
+## How to run
 
-- Frontend Development: UI design, responsiveness, form validation, dashboards
-- Backend Development: PHP logic, authentication, file-based storage APIs
-- Database & Testing: MySQL design, testing, debugging
+1. Copy the repo into your server document root (e.g. `C:\xampp\htdocs\Fuel-Queue-Management-System`).
+2. Import **`database/fqms.sql`**.
+3. Start **Apache** (and **MySQL**).
+4. Open the login page in a browser, for example:
 
----
+   `http://localhost/Fuel-Queue-Management-System/frontend/login.html`
 
-## 💰 Budget
-
-- Domain: $10/year
-- Hosting: $20–$50/year
-- Tools: Free
-
-Total: Under $100
+Adjust the path if your folder name or vhost differs.
 
 ---
 
-## 🎯 Conclusion
+## Roles and flows
 
-This project provides a practical solution to a real-world problem in Sri Lanka. It improves fuel accessibility and reduces unnecessary waiting time using modern web technologies.
+| Role | Registration | After login |
+|------|----------------|-------------|
+| **Customer** | Name, national ID, email, password | `dashboard.html` — browse all stations |
+| **Owner** | Above + station name, location, fuel types | `owner-dashboard.html` — manage own station’s petrol/diesel |
+
+Owners can use **User Dashboard** in the navbar to view the public station list (including their station).
+
+---
+
+## API overview (same-origin)
+
+All endpoints return JSON. Mutating routes expect appropriate methods.
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `backend/login.php` | POST | Login; sets PHP session |
+| `backend/register.php` | POST | Register customer or owner (+ station for owner) |
+| `backend/logout.php` | POST | Destroy session |
+| `backend/stations.php` | GET | List stations (requires logged-in session) |
+| `backend/owner_station.php` | GET | Owner’s station snapshot |
+| `backend/owner_station.php` | POST | Save petrol/diesel flags (`application/json`: `petrol`, `diesel`) |
+
+The frontend uses `credentials: "include"` so session cookies are sent.
+
+---
+
+## Troubleshooting
+
+- **503 from login/register**: MySQL not running or database not imported; check credentials in `config.php` / env vars.
+- **401 on dashboard**: Session missing or expired — log in again.
+- **Owner dashboard redirects to customer view**: Account role is not `owner`, or owner has no station row (only owners who registered with station data get a station).
+
+---
+
+## Future improvements
+
+- Customer-submitted queue reports updating `queue_status`.
+- Google Maps on the dashboard map placeholder.
+- Notifications table integration.
+- Admin role and moderation tools.
+
+---
+
+## Problem statement (context)
+
+Fuel shortages and long queues make real-time visibility valuable. This project reduces unnecessary travel by surfacing availability and queue-related information per station.
+
+---
+
+## License / team
+
+Use your repository’s license and team credits as appropriate for your course or organization.
