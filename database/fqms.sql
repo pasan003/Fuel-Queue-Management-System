@@ -76,16 +76,20 @@ CREATE TABLE `fuel_availability` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- One queue row per station (app updates this row)
+-- Includes service_rate and active_pumps for estimated waiting time calculation
 CREATE TABLE `queue_status` (
   `queue_id` int NOT NULL AUTO_INCREMENT,
   `station_id` int NOT NULL,
   `queue_length` int NOT NULL DEFAULT '0',
   `waiting_time` int NOT NULL DEFAULT '0',
+  `service_rate` decimal(5,2) NOT NULL DEFAULT '5.00' COMMENT 'Average minutes to serve one vehicle',
+  `active_pumps` int NOT NULL DEFAULT '1' COMMENT 'Number of active/working fuel pumps',
   `updated_by` int DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`queue_id`),
   UNIQUE KEY `uq_queue_station` (`station_id`),
   KEY `updated_by` (`updated_by`),
+  KEY `idx_service_active` (`service_rate`, `active_pumps`),
   CONSTRAINT `fk_queue_station` FOREIGN KEY (`station_id`) REFERENCES `fuel_stations` (`station_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_queue_user` FOREIGN KEY (`updated_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -130,5 +134,5 @@ INSERT INTO `fuel_availability` (`station_id`, `fuel_type_id`, `is_available`, `
 (1, 1, 1, CURRENT_TIMESTAMP),
 (1, 2, 0, CURRENT_TIMESTAMP);
 
-INSERT INTO `queue_status` (`station_id`, `queue_length`, `waiting_time`, `updated_at`) VALUES
-(1, 24, 18, CURRENT_TIMESTAMP);
+INSERT INTO `queue_status` (`station_id`, `queue_length`, `waiting_time`, `service_rate`, `active_pumps`, `updated_at`) VALUES
+(1, 24, 18, 5.00, 3, CURRENT_TIMESTAMP);
