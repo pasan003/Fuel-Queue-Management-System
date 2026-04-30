@@ -25,6 +25,17 @@ Web application for checking fuel availability and queue status at fuel stations
 - **Fuel toggles** persist to `fuel_availability` via `backend/owner_station.php`.
 - Queue metrics are **read from the database** (seed/demo values until customer reporting exists).
 
+### Estimated Waiting Time 🆕
+
+- **Real-time calculation** of queue wait times using: `(queue_length × service_rate) ÷ active_pumps`
+- **Dynamic recalculation** when queue, pumps, or fuel status changes
+- **API endpoints**:
+  - `GET /api/station/{id}/estimated-time` — retrieve estimated wait time for a station
+  - `PUT/PATCH /api/station/update-params` — owners update pump count and service rate
+- **Edge case handling**: empty queues, unavailable fuel, no operational pumps
+- **Full documentation** in `docs/ESTIMATED_WAITING_TIME_API.md` and `docs/QUICK_START.md`
+- See **Implementation Summary** in `docs/IMPLEMENTATION_SUMMARY.md` for architecture details
+
 ---
 
 ## Tech stack
@@ -50,16 +61,31 @@ Fuel-Queue-Management-System/
 │   ├── owner-dashboard.html # Owner view
 │   └── user_dashboard.html  # Redirects to dashboard.html
 ├── backend/
+│   ├── services/
+│   │   └── WaitingTimeService.php  # Estimated waiting time calculations
+│   ├── api/
+│   │   └── station/
+│   │       ├── estimated-time.php  # GET estimated wait time
+│   │       └── update-params.php   # PUT/PATCH pump and service rate updates
+│   ├── tests/
+│   │   └── test_waiting_time.php   # Test suite for waiting time calculations
 │   ├── config.php           # PDO, helpers, optional legacy JSON paths
 │   ├── login.php
 │   ├── register.php
 │   ├── logout.php
 │   ├── stations.php         # GET — station list (requires login)
-│   └── owner_station.php    # GET/POST — owner station + fuel save
+│   ├── owner_station.php    # GET/POST — owner station + fuel save
+│   ├── update_queue.php     # POST/PATCH/PUT — update queue length
+│   └── [other files]
 ├── database/
-│   └── fqms.sql             # Schema + demo seed row
+│   ├── fqms.sql             # Schema + demo seed row (includes waiting time columns)
+│   └── migrations/
+│       └── 001_add_waiting_time_columns.sql  # Migration for existing installations
 ├── docs/
-│   └── Rules                # Team guidelines
+│   ├── ESTIMATED_WAITING_TIME_API.md   # Complete API reference
+│   ├── QUICK_START.md                  # Quick setup and usage guide
+│   ├── IMPLEMENTATION_SUMMARY.md       # Implementation details and architecture
+│   └── Rules                           # Team guidelines
 └── README.md
 ```
 
@@ -132,14 +158,17 @@ Owners can use **User Dashboard** in the navbar to view the public station list 
 
 All endpoints return JSON. Mutating routes expect appropriate methods.
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `backend/login.php` | POST | Login; sets PHP session |
-| `backend/register.php` | POST | Register customer or owner (+ station for owner) |
-| `backend/logout.php` | POST | Destroy session |
-| `backend/stations.php` | GET | List stations (requires logged-in session) |
-| `backend/owner_station.php` | GET | Owner’s station snapshot |
-| `backend/owner_station.php` | POST | Save petrol/diesel flags (`application/json`: `petrol`, `diesel`) |
+| Endpoint | Method | Purpose | Auth Required |
+|----------|--------|---------|---|
+| `backend/login.php` | POST | Login; sets PHP session | ✗ |
+| `backend/register.php` | POST | Register customer or owner (+ station for owner) | ✗ |
+| `backend/logout.php` | POST | Destroy session | ✓ |
+| `backend/stations.php` | GET | List stations (requires logged-in session) | ✓ |
+| `backend/owner_station.php` | GET | Owner's station snapshot | ✓ (Owner) |
+| `backend/owner_station.php` | POST | Save petrol/diesel flags | ✓ (Owner) |
+| `backend/update_queue.php` | POST/PATCH/PUT | Update queue length | ✓ |
+| `backend/api/station/estimated-time.php` | GET | Get estimated waiting time | ✓ |
+| `backend/api/station/update-params.php` | PUT/PATCH | Update pump count & service rate | ✓ (Owner) |
 
 The frontend uses `credentials: "include"` so session cookies are sent.
 
