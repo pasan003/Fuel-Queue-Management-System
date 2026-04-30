@@ -152,6 +152,90 @@ function getTimeAgo(date) {
   return `${diffDays} days ago`;
 }
 
+function openQueueUpdateModal() {
+  const backdrop = document.getElementById("queueUpdateModalBackdrop");
+  const input = document.getElementById("queueUpdateInput");
+  const errorEl = document.getElementById("queueUpdateError");
+  
+  if (!backdrop || !input) return;
+
+  // Set initial value
+  input.value = String(ownerState.queueLength);
+  errorEl.textContent = "";
+  errorEl.classList.remove("show");
+
+  backdrop.classList.add("active");
+  input.focus();
+}
+
+function closeQueueUpdateModal() {
+  const backdrop = document.getElementById("queueUpdateModalBackdrop");
+  if (backdrop) {
+    backdrop.classList.remove("active");
+  }
+}
+
+async function submitQueueUpdate() {
+  const backdrop = document.getElementById("queueUpdateModalBackdrop");
+  const input = document.getElementById("queueUpdateInput");
+  const errorEl = document.getElementById("queueUpdateError");
+  const submitBtn = document.getElementById("queueUpdateSubmit");
+
+  if (!backdrop || !input) return;
+
+  const queueLength = Number(input.value);
+
+  errorEl.textContent = "";
+  errorEl.classList.remove("show");
+
+  // Validation
+  if (isNaN(queueLength) || queueLength < 0) {
+    errorEl.textContent = "Queue length must be a non-negative number";
+    errorEl.classList.add("show");
+    return;
+  }
+
+  if (queueLength > 10000) {
+    errorEl.textContent = "Queue length exceeds reasonable limit (max 10000)";
+    errorEl.classList.add("show");
+    return;
+  }
+
+  submitBtn.disabled = true;
+  try {
+    const response = await apiPostJson("../backend/update_queue.php", {
+      station_id: ownerState.stationId,
+      queue_length: queueLength,
+    });
+
+    if (!response.ok) {
+      throw new Error(response.message || "Failed to update queue");
+    }
+
+    // Update local state
+    ownerState.queueLength = response.queue_length;
+    ownerState.lastUpdated = new Date();
+
+    // Re-render the UI
+    updateQueueDisplay();
+    updateStatusDisplay();
+    updateStationInfo();
+
+    closeQueueUpdateModal();
+
+    // Show success feedback
+    submitBtn.innerHTML = '<i class="fa-solid fa-check me-2"></i>Updated!';
+    setTimeout(() => {
+      submitBtn.innerHTML = 'Update';
+    }, 2000);
+  } catch (err) {
+    errorEl.textContent = err?.message || "Update failed";
+    errorEl.classList.add("show");
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+
 function refreshUI() {
   updateFuelStatusBadges();
   updateStatusDisplay();
@@ -258,6 +342,47 @@ document.addEventListener("DOMContentLoaded", async () => {
         alert(err?.message || "Save failed");
       } finally {
         saveFuelBtn.disabled = false;
+      }
+    });
+  }
+
+  // Queue Update Modal Event Listeners
+  const backdrop = document.getElementById("queueUpdateModalBackdrop");
+  const cancelBtn = document.getElementById("queueUpdateCancel");
+  const submitBtn = document.getElementById("queueUpdateSubmit");
+  const input = document.getElementById("queueUpdateInput");
+  const updateQueueBtn = document.getElementById("ownerUpdateQueueBtn");
+
+  if (updateQueueBtn) {
+    updateQueueBtn.addEventListener("click", () => {
+      openQueueUpdateModal();
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) {
+        closeQueueUpdateModal();
+      }
+    });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      closeQueueUpdateModal();
+    });
+  }
+
+  if (submitBtn) {
+    submitBtn.addEventListener("click", async () => {
+      await submitQueueUpdate();
+    });
+  }
+
+  if (input) {
+    input.addEventListener("keypress", async (e) => {
+      if (e.key === "Enter") {
+        await submitQueueUpdate();
       }
     });
   }

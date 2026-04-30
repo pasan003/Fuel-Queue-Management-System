@@ -146,6 +146,26 @@
           </div>
         </div>
       </section>
+
+      <!-- Queue Update Modal -->
+      <div class="queue-update-modal-backdrop" id="queueUpdateModalBackdrop">
+        <div class="queue-update-modal">
+          <div class="queue-update-modal-header">
+            <i class="fa-solid fa-people-line"></i>
+            Update Queue Length
+          </div>
+          <div class="queue-update-modal-body">
+            <label class="queue-update-label">New Queue Length (vehicles)</label>
+            <input type="number" id="queueUpdateInput" class="queue-update-input" min="0" max="10000" placeholder="Enter number of vehicles...">
+            <div class="queue-update-hint">Enter the current number of vehicles waiting in queue</div>
+            <div class="queue-update-error" id="queueUpdateError"></div>
+          </div>
+          <div class="queue-update-footer">
+            <button class="queue-update-btn-cancel" id="queueUpdateCancel">Cancel</button>
+            <button class="queue-update-btn-submit" id="queueUpdateSubmit">Update</button>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
