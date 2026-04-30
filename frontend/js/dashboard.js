@@ -55,6 +55,24 @@ function formatWait(mins) {
   return mins === 0 ? "—" : `${mins} mins`;
 }
 
+/**
+ * Determine wait time status for visual styling.
+ * @param {number} waitTimeMinutes - Estimated wait time in minutes
+ * @returns {object} {status, label, icon}
+ */
+function getWaitTimeStatus(waitTimeMinutes) {
+  if (waitTimeMinutes === 0) {
+    return { status: 'quick', label: 'Available Now', icon: 'fa-circle-check' };
+  }
+  if (waitTimeMinutes <= 15) {
+    return { status: 'quick', label: 'Quick Wait', icon: 'fa-check' };
+  }
+  if (waitTimeMinutes <= 30) {
+    return { status: 'normal', label: 'Moderate Wait', icon: 'fa-hourglass-half' };
+  }
+  return { status: 'long', label: 'Long Wait', icon: 'fa-hourglass-end' };
+}
+
 /** Human-readable relative time from MySQL ISO datetime. */
 function formatLastUpdated(iso) {
   if (!iso) return "—";
@@ -75,6 +93,8 @@ function formatLastUpdated(iso) {
 function stationCardHTML(station) {
   const last = formatLastUpdated(station.last_updated_iso);
   const id = station.station_id;
+  const waitStatus = getWaitTimeStatus(station.waiting_time);
+  
   return `
     <div class="col-12 col-lg-6">
       <div class="station-link" data-station-id="${id}">
@@ -102,20 +122,26 @@ function stationCardHTML(station) {
               <div class="k"><i class="fa-solid fa-oil-can me-2"></i>Diesel</div>
               <div class="v">${yesNoChip(station.diesel)}</div>
             </div>
-            <div class="meta">
-              <div class="k"><i class="fa-solid fa-users me-2"></i>Queue Length</div>
-              <div class="v">
-                <div class="queue-length-wrapper">
-                  <span>${formatQueue(station.queue_length)}</span>
-                  <button class="update-queue-btn" type="button" data-update-queue="${id}" title="Update queue length">
-                    <i class="fa-solid fa-edit"></i>Update
-                  </button>
-                </div>
+            <div class="meta queue-metric">
+              <div class="k"><i class="fa-solid fa-people-line me-2"></i>Queue Length</div>
+              <div class="queue-length-value">${station.queue_length}</div>
+              <div class="meta-unit">vehicles waiting</div>
+              <div style="margin-top: 8px;">
+                <button class="update-queue-btn" type="button" data-update-queue="${id}" title="Update queue length">
+                  <i class="fa-solid fa-edit"></i>Update
+                </button>
               </div>
             </div>
-            <div class="meta">
-              <div class="k"><i class="fa-solid fa-clock me-2"></i>Waiting Time</div>
-              <div class="v">${formatWait(station.waiting_time)}</div>
+            <div class="meta waiting-time-metric">
+              <div class="k"><i class="fa-solid fa-clock me-2"></i>Est. Wait Time</div>
+              <div class="waiting-time-value">${station.waiting_time === 0 ? '0' : station.waiting_time}</div>
+              <div class="meta-unit">minutes</div>
+              ${station.waiting_time > 0 ? `
+              <div class="wait-status-badge ${waitStatus.status}">
+                <i class="fa-solid ${waitStatus.icon}"></i>
+                ${waitStatus.label}
+              </div>
+              ` : ''}
             </div>
           </div>
 

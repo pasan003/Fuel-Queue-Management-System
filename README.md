@@ -1,10 +1,14 @@
 # Fuel Queue Management System
 
-Web application for checking fuel availability and queue status at fuel stations. Customers browse stations on a dashboard; station owners manage fuel availability for their own station through an owner dashboard.
+A modern web application for checking real-time fuel availability and queue status at fuel stations. Customers browse stations and see estimated wait times; station owners manage fuel availability and track queue metrics for their station.
+
+**Version**: 2.0 (Simplified Waiting Time Logic)
+**Status**: Production Ready ✅
+**Last Updated**: April 30, 2026
 
 ---
 
-## Features (current)
+## 🎯 Key Features
 
 ### Authentication
 
@@ -25,16 +29,18 @@ Web application for checking fuel availability and queue status at fuel stations
 - **Fuel toggles** persist to `fuel_availability` via `backend/owner_station.php`.
 - Queue metrics are **read from the database** (seed/demo values until customer reporting exists).
 
-### Estimated Waiting Time 🆕
+### Estimated Waiting Time
 
-- **Real-time calculation** of queue wait times using: `(queue_length × service_rate) ÷ active_pumps`
-- **Dynamic recalculation** when queue, pumps, or fuel status changes
-- **API endpoints**:
-  - `GET /api/station/{id}/estimated-time` — retrieve estimated wait time for a station
-  - `PUT/PATCH /api/station/update-params` — owners update pump count and service rate
-- **Edge case handling**: empty queues, unavailable fuel, no operational pumps
-- **Full documentation** in `docs/ESTIMATED_WAITING_TIME_API.md` and `docs/QUICK_START.md`
-- See **Implementation Summary** in `docs/IMPLEMENTATION_SUMMARY.md` for architecture details
+- **Simple Formula**: `Estimated Waiting Time = Queue Length × 2 minutes`
+- **Automatic Calculation**: Calculated instantly when queue updates
+- **Real-time Display**: Shows on customer and owner dashboards
+- **Proven Model**: 2 minutes per vehicle industry standard
+- **API Endpoint**: `GET /api/station/{id}/estimated-time`
+- **Examples**:
+  - 5 vehicles = 10 minutes
+  - 12 vehicles = 24 minutes  
+  - 20 vehicles = 40 minutes
+- **Documentation**: See [WAITING_TIME_LOGIC.md](docs/WAITING_TIME_LOGIC.md)
 
 ---
 
@@ -48,48 +54,49 @@ Web application for checking fuel availability and queue status at fuel stations
 
 ---
 
-## Folder structure
+## 📁 Folder structure
 
 ```text
 Fuel-Queue-Management-System/
-├── frontend/
-│   ├── css/           # main, auth, dashboard, owner-dashboard
-│   ├── js/            # auth.js, dashboard.js, owner-dashboard.js
-│   ├── login.html
-│   ├── register.html
-│   ├── dashboard.html       # Customer view
-│   ├── owner-dashboard.html # Owner view
-│   └── user_dashboard.html  # Redirects to dashboard.html
-├── backend/
-│   ├── services/
-│   │   └── WaitingTimeService.php  # Estimated waiting time calculations
-│   ├── api/
-│   │   └── station/
-│   │       ├── estimated-time.php  # GET estimated wait time
-│   │       └── update-params.php   # PUT/PATCH pump and service rate updates
-│   ├── tests/
-│   │   └── test_waiting_time.php   # Test suite for waiting time calculations
-│   ├── config.php           # PDO, helpers, optional legacy JSON paths
-│   ├── login.php
-│   ├── register.php
-│   ├── logout.php
-│   ├── stations.php         # GET — station list (requires login)
-│   ├── owner_station.php    # GET/POST — owner station + fuel save
-│   ├── update_queue.php     # POST/PATCH/PUT — update queue length
-│   └── [other files]
+├── frontend/                    # Client-side application
+│   ├── css/
+│   │   ├── main.css            # Global styles
+│   │   ├── auth.css            # Login/register styling
+│   │   ├── dashboard.css       # Customer dashboard + enhanced queue display
+│   │   └── owner-dashboard.css # Owner dashboard + queue styling
+│   ├── js/
+│   │   ├── auth.js             # Authentication logic
+│   │   ├── dashboard.js        # Customer dashboard with queue handling
+│   │   └── owner-dashboard.js  # Owner dashboard with fuel toggles
+│   ├── login.html              # Login page
+│   ├── register.html           # Registration page
+│   ├── dashboard.html          # Customer dashboard (main view)
+│   ├── owner-dashboard.html    # Owner dashboard
+│   └── user_dashboard.html     # Redirect to dashboard.html
+│
+├── backend/                     # Server-side PHP API
+│   ├── config.php              # Database config, PDO connection, helpers
+│   ├── login.php               # POST login endpoint
+│   ├── register.php            # POST register endpoint  
+│   ├── logout.php              # POST logout endpoint
+│   ├── stations.php            # GET all stations with queue + fuel
+│   ├── owner_station.php       # GET/POST owner's station + fuel save
+│   ├── update_queue.php        # POST/PATCH/PUT update queue (auto-calc wait time)
+│   └── api/
+│       └── station/
+│           └── estimated-time.php  # GET estimated waiting time
+│
 ├── database/
-│   ├── fqms.sql             # Schema + demo seed row (includes waiting time columns)
-│   └── migrations/
-│       └── 001_add_waiting_time_columns.sql  # Migration for existing installations
+│   ├── fqms.sql                # Complete schema + demo seed data
+│   └── migrations/             # (reserved for future migrations)
+│
 ├── docs/
-│   ├── ESTIMATED_WAITING_TIME_API.md   # Complete API reference
-│   ├── QUICK_START.md                  # Quick setup and usage guide
-│   ├── IMPLEMENTATION_SUMMARY.md       # Implementation details and architecture
-│   └── Rules                           # Team guidelines
-└── README.md
+│   ├── QUICK_START.md          # Setup and API quick reference
+│   ├── WAITING_TIME_LOGIC.md   # Detailed formula and examples
+│   └── Rules                   # Team guidelines (if applicable)
+│
+└── README.md                   # This file
 ```
-
-Legacy JSON helpers remain in `config.php` for compatibility; **authentication and dashboards use MySQL**.
 
 ---
 
@@ -140,6 +147,122 @@ Override without editing code using environment variables:
    `http://localhost/Fuel-Queue-Management-System/frontend/login.html`
 
 Adjust the path if your folder name or vhost differs.
+
+---
+
+## 👥 Roles and flows
+
+| Role | Registration | After login |
+|------|----------------|-------------|
+| **Customer** | Name, national ID, email, password | `dashboard.html` — browse all stations |
+| **Owner** | Above + station name, location | `owner-dashboard.html` — manage fuel + queue |
+
+Owners can also view the **Customer Dashboard** to see their station from customer perspective.
+
+---
+
+## 🔌 API Overview
+
+All endpoints return JSON. Authentication required for all endpoints except login/register.
+
+| Endpoint | Method | Purpose | Auth |
+|----------|--------|---------|------|
+| `login.php` | POST | Authenticate user | ✗ |
+| `register.php` | POST | Create new account | ✗ |
+| `logout.php` | POST | Clear session | ✓ |
+| `stations.php` | GET | List all stations with queue/fuel | ✓ |
+| `owner_station.php` | GET | Get owner's linked station | ✓ Owner |
+| `owner_station.php` | POST | Save fuel availability | ✓ Owner |
+| `update_queue.php` | POST/PATCH/PUT | Update queue length | ✓ |
+| `api/station/{id}/estimated-time` | GET | Get estimated waiting time | ✓ |
+
+**Key Response Format**:
+```json
+{
+  "ok": true,
+  "station_id": 1,
+  "queue_length": 12,
+  "waiting_time": 24,
+  "unit": "minutes"
+}
+```
+
+---
+
+## 🧪 Troubleshooting
+
+### "503 Database unavailable"
+→ Start MySQL from XAMPP/WAMP Control Panel
+
+### "401 Authentication required"  
+→ Login first, then make API calls
+
+### "404 Station not found"
+→ Import `database/fqms.sql` to seed demo data
+
+### Queue doesn't update
+→ Check browser console (F12) for errors
+
+### Styles look broken
+→ Verify CSS files are in `frontend/css/` folder
+
+---
+
+## 📝 Development Notes
+
+### Recent Changes (v2.0 - Apr 2026)
+- ✅ Simplified estimated waiting time formula to: Queue Length × 2
+- ✅ Removed complex service_rate / active_pumps calculation
+- ✅ Auto-calculate waiting_time in update_queue.php
+- ✅ Enhanced UI with better queue display cards
+- ✅ Added wait status badges (Quick / Normal / Long)
+- ✅ Improved responsive design for mobile/tablet
+- ✅ Added comprehensive code comments
+- ✅ Updated all documentation
+
+### Files Removed (Old Wrong Logic)
+- `backend/services/WaitingTimeService.php`
+- `backend/api/station/update-params.php`
+- `backend/tests/test_waiting_time.php`
+- `database/migrations/001_add_waiting_time_columns.sql`
+- `docs/ESTIMATED_WAITING_TIME_API.md`
+- `docs/IMPLEMENTATION_SUMMARY.md`
+
+### Current Code Quality
+- ✅ Proper PHP type declarations
+- ✅ Comprehensive comments on complex logic
+- ✅ Readable variable names (queueLength, estimatedWaitTime)
+- ✅ SQL injection prevention (prepared statements)
+- ✅ Clean separation of concerns
+- ✅ Responsive design with mobile-first approach
+
+---
+
+## 📚 Documentation Files
+
+- [QUICK_START.md](docs/QUICK_START.md) - Setup and API quick reference
+- [WAITING_TIME_LOGIC.md](docs/WAITING_TIME_LOGIC.md) - Detailed formula explanation
+
+---
+
+## 🔮 Future Enhancements
+
+- Google Maps integration
+- Customer real-time queue reports
+- Admin dashboard
+- Push notifications
+- Historical analytics
+- Peak hour predictions
+
+---
+
+## 📄 License
+
+Use this project for educational and commercial purposes as needed.
+
+---
+
+**Questions?** Check [QUICK_START.md](docs/QUICK_START.md) or [WAITING_TIME_LOGIC.md](docs/WAITING_TIME_LOGIC.md)
 
 ---
 

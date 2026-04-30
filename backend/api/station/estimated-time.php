@@ -6,25 +6,24 @@ declare(strict_types=1);
  *
  * Calculate and return estimated waiting time for a station.
  * 
- * Requires: Authentication (session)
- * Returns: { station_id, queue_length, estimated_time, unit, status?, message? }
+ * FORMULA: Estimated Waiting Time = Queue Length × 2 minutes per vehicle
  * 
- * Edge cases handled:
- * - Queue empty (0 minutes)
- * - Fuel unavailable ("unavailable" status)
- * - No active pumps ("no_pumps" status)
- * - Invalid data (error response)
+ * Authentication: Required (user must be logged in)
+ * Returns: JSON with estimated_time or status message
+ * 
+ * Examples:
+ * - Queue: 5 vehicles → Estimated Wait: 10 minutes
+ * - Queue: 12 vehicles → Estimated Wait: 24 minutes
+ * - Queue: 0 vehicles → Estimated Wait: 0 minutes (Available now)
  */
 
 require __DIR__ . '/../config.php';
-require __DIR__ . '/../services/WaitingTimeService.php';
 
-// Parse URL to extract station ID
+// Parse URL to extract station ID from: /api/station/{id}/estimated-time
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 $pathParts = explode('/', $requestUri);
 $stationId = null;
 
-// Handle URL: /api/station/123/estimated-time
 for ($i = 0; $i < count($pathParts); $i++) {
     if ($pathParts[$i] === 'station' && isset($pathParts[$i + 1])) {
         $stationId = (int)$pathParts[$i + 1];
@@ -32,89 +31,78 @@ for ($i = 0; $i < count($pathParts); $i++) {
     }
 }
 
+// Validate station ID
 if ($stationId === null || $stationId <= 0) {
     json_response(400, ['ok' => false, 'message' => 'Invalid or missing station ID']);
 }
 
 require_get();
 
+// Check database connection
 $pdo = db();
 if (!$pdo) {
     json_response(503, ['ok' => false, 'message' => 'Database unavailable']);
 }
 
+// Verify user is authenticated
 session_boot();
 if (empty($_SESSION['user_id'])) {
     json_response(401, ['ok' => false, 'message' => 'Authentication required']);
 }
 
 try {
-    // Fetch station data with queue and fuel info
+    // Fetch station data: queue length and fuel availability
+    // Query joins with fuel_availability table to check both petrol and diesel
     $stationStmt = $pdo->prepare(
         'SELECT fs.station_id, fs.station_name, 
-                qs.queue_length, qs.service_rate, qs.active_pumps,
+                COALESCE(qs.queue_length, 0) AS queue_length,
                 MAX(CASE WHEN fa.fuel_type_id = 1 THEN fa.is_available ELSE 0 END) AS petrol_available,
                 MAX(CASE WHEN fa.fuel_type_id = 2 THEN fa.is_available ELSE 0 END) AS diesel_available
          FROM fuel_stations fs
          LEFT JOIN queue_status qs ON qs.station_id = fs.station_id
          LEFT JOIN fuel_availability fa ON fa.station_id = fs.station_id
          WHERE fs.station_id = ?
-         GROUP BY fs.station_id, fs.station_name, qs.queue_length, qs.service_rate, qs.active_pumps'
+         GROUP BY fs.station_id, fs.station_name, qs.queue_length'
     );
     $stationStmt->execute([$stationId]);
     $station = $stationStmt->fetch();
 
+    // Return 404 if station doesn't exist
     if (!$station) {
         json_response(404, ['ok' => false, 'message' => 'Station not found']);
     }
 
-    // Extract data with defaults
-    $queueLength = (int)($station['queue_length'] ?? 0);
-    $serviceRate = (float)($station['service_rate'] ?? 5.0); // Default: 5 minutes per vehicle
-    $activePumps = (int)($station['active_pumps'] ?? 1); // Default: 1 pump
+    // Extract queue length (default 0 if no queue_status row exists yet)
+    $queueLength = (int)$station['queue_length'];
     
-    // Determine fuel availability - check if ANY fuel type is available
+    // Check fuel availability (station must have at least petrol OR diesel)
     $petrolAvailable = (bool)(int)($station['petrol_available'] ?? 0);
     $dieselAvailable = (bool)(int)($station['diesel_available'] ?? 0);
     $fuelAvailable = $petrolAvailable || $dieselAvailable;
 
-    // Calculate estimated time using service
-    $result = WaitingTimeService::calculate(
-        $queueLength,
-        $serviceRate,
-        $activePumps,
-        $fuelAvailable
-    );
+    // EDGE CASE: If fuel is unavailable, cannot serve any customer
+    if (!$fuelAvailable) {
+        json_response(200, [
+            'ok' => true,
+            'station_id' => $stationId,
+            'queue_length' => $queueLength,
+            'unit' => 'minutes',
+            'status' => 'unavailable',
+            'message' => 'Requested fuel type is unavailable',
+        ]);
+    }
 
-    // Format response
+    // MAIN CALCULATION: estimated_time = queue_length × 2
+    // This assumes 2 minutes average service time per vehicle
+    $estimatedTime = $queueLength * 2;
+
+    // Build and return successful response
     $response = [
         'ok' => true,
         'station_id' => $stationId,
         'queue_length' => $queueLength,
+        'estimated_time' => $estimatedTime,
         'unit' => 'minutes',
-    ];
-
-    if ($result['estimated_time'] !== null) {
-        $response['estimated_time'] = $result['estimated_time'];
-    }
-
-    if ($result['status'] !== 'success') {
-        $response['status'] = $result['status'];
-        if (!$result['success'] && $result['status'] === 'invalid_input') {
-            json_response(400, array_merge($response, ['ok' => false, 'message' => $result['message']]));
-        } else {
-            $response['message'] = $result['message'];
-        }
-    } else {
-        // Success case - add calculation details
-        $response['estimated_time'] = $result['estimated_time'];
-    }
-
-    // Include operational data for debugging/analytics
-    $response['_debug'] = [
-        'service_rate_minutes' => $serviceRate,
-        'active_pumps' => $activePumps,
-        'fuel_available' => $fuelAvailable,
     ];
 
     json_response(200, $response);

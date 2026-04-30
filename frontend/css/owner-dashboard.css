@@ -354,12 +354,53 @@
   padding: 24px;
   text-align: center;
   transition: all var(--t) ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.queue-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  opacity: 0;
+  transition: opacity var(--t) ease;
 }
 
 .queue-card:hover {
   border-color: rgba(13, 115, 119, 0.28);
   box-shadow: var(--shadow-sm);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+}
+
+.queue-card:hover::before {
+  opacity: 1;
+}
+
+/* Enhanced waiting time card styling */
+.queue-card:nth-child(2) {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.06), rgba(255, 138, 94, 0.08));
+  border-color: rgba(255, 107, 53, 0.15);
+}
+
+.queue-card:nth-child(2) .queue-icon {
+  color: var(--accent);
+}
+
+.queue-card:nth-child(2) .queue-card-value {
+  color: var(--accent);
+}
+
+.queue-card:nth-child(2)::before {
+  background: linear-gradient(90deg, var(--accent), #FF8A5E);
+}
+
+.queue-card:nth-child(2):hover {
+  border-color: rgba(255, 107, 53, 0.28);
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.12);
 }
 
 .queue-card-header {
@@ -373,6 +414,15 @@
 .queue-icon {
   font-size: 1.8rem;
   color: var(--primary);
+  transition: transform var(--t) ease;
+}
+
+.queue-card:hover .queue-icon {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.queue-card:nth-child(2):hover .queue-icon {
+  transform: scale(1.1) rotate(5deg);
 }
 
 .queue-card-header h3 {
@@ -387,6 +437,11 @@
   font-weight: 900;
   color: var(--primary);
   line-height: 1;
+  transition: transform var(--t) ease;
+}
+
+.queue-card:hover .queue-card-value {
+  transform: scale(1.05);
 }
 
 .queue-card-unit {

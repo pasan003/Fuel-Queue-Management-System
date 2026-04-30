@@ -597,3 +597,127 @@ body {
     transform: translateY(0);
   }
 }
+
+/* ===== ENHANCED QUEUE & WAITING TIME DISPLAY ===== */
+
+/* Queue metrics highlight in card meta section */
+.meta.queue-metric,
+.meta.waiting-time-metric {
+  background: linear-gradient(135deg, rgba(13, 115, 119, 0.06), rgba(20, 255, 236, 0.08));
+  border: 1px solid rgba(13, 115, 119, 0.15);
+  padding: 14px 14px;
+  transition: all var(--t) ease;
+}
+
+.meta.waiting-time-metric {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.08), rgba(255, 138, 94, 0.06));
+  border: 1px solid rgba(255, 107, 53, 0.18);
+}
+
+.meta.queue-metric:hover,
+.meta.waiting-time-metric:hover {
+  background: linear-gradient(135deg, rgba(13, 115, 119, 0.12), rgba(20, 255, 236, 0.12));
+  border-color: rgba(13, 115, 119, 0.28);
+  box-shadow: 0 4px 12px rgba(13, 115, 119, 0.12);
+}
+
+.meta.waiting-time-metric:hover {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(255, 138, 94, 0.10));
+  border-color: rgba(255, 107, 53, 0.28);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.12);
+}
+
+/* Queue length value styling */
+.queue-length-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+/* Waiting time value styling */
+.waiting-time-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+/* Unit text styling */
+.meta-unit {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 4px;
+  text-transform: lowercase;
+}
+
+/* Waiting time status indicator badge */
+.wait-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.wait-status-badge.quick {
+  background: rgba(45, 106, 79, 0.15);
+  color: var(--status-available);
+  border: 1px solid rgba(45, 106, 79, 0.28);
+}
+
+.wait-status-badge.normal {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--status-limited);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.wait-status-badge.long {
+  background: rgba(216, 71, 39, 0.15);
+  color: var(--status-nofuel);
+  border: 1px solid rgba(216, 71, 39, 0.28);
+}
+
+/* Responsive improvements for meta grid */
+@media (max-width: 768px) {
+  .meta-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .queue-length-value,
+  .waiting-time-value {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .meta-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .meta {
+    padding: 12px 12px;
+  }
+  
+  .queue-length-value,
+  .waiting-time-value {
+    font-size: 1.35rem;
+  }
+  
+  .queue-length-wrapper {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .update-queue-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
