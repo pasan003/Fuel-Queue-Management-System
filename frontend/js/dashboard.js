@@ -104,7 +104,14 @@ function stationCardHTML(station) {
             </div>
             <div class="meta">
               <div class="k"><i class="fa-solid fa-users me-2"></i>Queue Length</div>
-              <div class="v">${formatQueue(station.queue_length)}</div>
+              <div class="v">
+                <div class="queue-length-wrapper">
+                  <span>${formatQueue(station.queue_length)}</span>
+                  <button class="update-queue-btn" type="button" data-update-queue="${id}" title="Update queue length">
+                    <i class="fa-solid fa-edit"></i>Update
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="meta">
               <div class="k"><i class="fa-solid fa-clock me-2"></i>Waiting Time</div>
@@ -168,6 +175,111 @@ function wireOpenButtons(grid) {
   });
 }
 
+function wireUpdateQueueButtons(grid) {
+  grid.querySelectorAll("[data-update-queue]").forEach((btn) => {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const stationId = Number(this.getAttribute("data-update-queue"));
+      const station = state.stations.find((x) => x.station_id === stationId);
+      if (!station) return;
+      openQueueUpdateModal(station);
+    });
+  });
+}
+
+function openQueueUpdateModal(station) {
+  const backdrop = document.getElementById("queueUpdateModalBackdrop");
+  const input = document.getElementById("queueUpdateInput");
+  const errorEl = document.getElementById("queueUpdateError");
+  
+  if (!backdrop || !input) return;
+
+  // Set initial value
+  input.value = String(station.queue_length);
+  errorEl.textContent = "";
+  errorEl.classList.remove("show");
+
+  backdrop.classList.add("active");
+  input.focus();
+
+  // Store station ID for later use
+  backdrop.dataset.stationId = String(station.station_id);
+  backdrop.dataset.stationName = station.station_name;
+}
+
+function closeQueueUpdateModal() {
+  const backdrop = document.getElementById("queueUpdateModalBackdrop");
+  if (backdrop) {
+    backdrop.classList.remove("active");
+    backdrop.dataset.stationId = "";
+    backdrop.dataset.stationName = "";
+  }
+}
+
+async function submitQueueUpdate() {
+  const backdrop = document.getElementById("queueUpdateModalBackdrop");
+  const input = document.getElementById("queueUpdateInput");
+  const errorEl = document.getElementById("queueUpdateError");
+  const submitBtn = document.getElementById("queueUpdateSubmit");
+
+  if (!backdrop || !input) return;
+
+  const stationId = Number(backdrop.dataset.stationId);
+  const stationName = backdrop.dataset.stationName;
+  const queueLength = Number(input.value);
+
+  errorEl.textContent = "";
+  errorEl.classList.remove("show");
+
+  // Validation
+  if (isNaN(queueLength) || queueLength < 0) {
+    errorEl.textContent = "Queue length must be a non-negative number";
+    errorEl.classList.add("show");
+    return;
+  }
+
+  if (queueLength > 10000) {
+    errorEl.textContent = "Queue length exceeds reasonable limit (max 10000)";
+    errorEl.classList.add("show");
+    return;
+  }
+
+  submitBtn.disabled = true;
+  try {
+    const response = await apiPostJson("../backend/update_queue.php", {
+      station_id: stationId,
+      queue_length: queueLength,
+    });
+
+    if (!response.ok) {
+      throw new Error(response.message || "Failed to update queue");
+    }
+
+    // Update local state
+    const station = state.stations.find((s) => s.station_id === stationId);
+    if (station) {
+      station.queue_length = response.queue_length;
+      station.last_updated_iso = response.updated_at;
+    }
+
+    // Re-render the grid
+    render();
+    closeQueueUpdateModal();
+
+    // Show success feedback
+    submitBtn.innerHTML = '<i class="fa-solid fa-check me-2"></i>Updated!';
+    setTimeout(() => {
+      submitBtn.innerHTML = 'Update';
+    }, 2000);
+  } catch (err) {
+    errorEl.textContent = err?.message || "Update failed";
+    errorEl.classList.add("show");
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+
 function render() {
   const grid = document.getElementById("stationsGrid");
   const emptyWrap = document.getElementById("emptyWrap");
@@ -185,6 +297,7 @@ function render() {
 
   emptyWrap.classList.toggle("d-none", filtered.length !== 0);
   wireOpenButtons(grid);
+  wireUpdateQueueButtons(grid);
 }
 
 function setActiveFilter(filter) {
@@ -255,6 +368,40 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.addEventListener("click", () => setActiveFilter(btn.getAttribute("data-filter")));
   });
+
+  // Queue Update Modal Event Listeners
+  const backdrop = document.getElementById("queueUpdateModalBackdrop");
+  const cancelBtn = document.getElementById("queueUpdateCancel");
+  const submitBtn = document.getElementById("queueUpdateSubmit");
+  const input = document.getElementById("queueUpdateInput");
+
+  if (backdrop) {
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) {
+        closeQueueUpdateModal();
+      }
+    });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      closeQueueUpdateModal();
+    });
+  }
+
+  if (submitBtn) {
+    submitBtn.addEventListener("click", async () => {
+      await submitQueueUpdate();
+    });
+  }
+
+  if (input) {
+    input.addEventListener("keypress", async (e) => {
+      if (e.key === "Enter") {
+        await submitQueueUpdate();
+      }
+    });
+  }
 
   render();
 });

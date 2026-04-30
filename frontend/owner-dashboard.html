@@ -241,7 +241,7 @@
         </div>
       </section>
 
-      <!-- Queue Information (Read-only) -->
+      <!-- Queue Information -->
       <section class="panel queue-info-panel animate-in" style="animation-delay: 0.18s;">
         <h2 class="section-title mb-4">
           <i class="fa-solid fa-users"></i>
@@ -258,6 +258,11 @@
               </div>
               <div class="queue-card-value" id="queueLength">24</div>
               <div class="queue-card-unit">vehicles waiting</div>
+              <div style="margin-top: 12px;">
+                <button class="update-queue-btn" id="ownerUpdateQueueBtn" type="button">
+                  <i class="fa-solid fa-edit"></i>Update
+                </button>
+              </div>
             </div>
           </div>
 
@@ -276,7 +281,7 @@
 
         <div class="queue-note mt-3">
           <i class="fa-solid fa-info-circle"></i>
-          <span><strong>Note:</strong> Queue information is updated in real-time by customers. You can only view this data.</span>
+          <span><strong>Note:</strong> You can update the queue length to reflect current station conditions. This helps customers make informed decisions.</span>
         </div>
       </section>
 
@@ -336,6 +341,26 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Queue Update Modal -->
+  <div class="queue-update-modal-backdrop" id="queueUpdateModalBackdrop">
+    <div class="queue-update-modal">
+      <div class="queue-update-modal-header">
+        <i class="fa-solid fa-people-line"></i>
+        Update Queue Length
+      </div>
+      <div class="queue-update-modal-body">
+        <label class="queue-update-label">New Queue Length (vehicles)</label>
+        <input type="number" id="queueUpdateInput" class="queue-update-input" min="0" max="10000" placeholder="Enter number of vehicles...">
+        <div class="queue-update-hint">Enter the current number of vehicles waiting in queue</div>
+        <div class="queue-update-error" id="queueUpdateError"></div>
+      </div>
+      <div class="queue-update-footer">
+        <button class="queue-update-btn-cancel" id="queueUpdateCancel">Cancel</button>
+        <button class="queue-update-btn-submit" id="queueUpdateSubmit">Update</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
