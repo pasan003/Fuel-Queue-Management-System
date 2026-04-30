@@ -88,7 +88,7 @@ Fuel-Queue-Management-System/
 │
 ├── database/
 │   ├── fqms.sql                # Complete schema + demo seed data
-│   └── migrations/             # (reserved for future migrations)
+│
 │
 ├── docs/
 │   ├── QUICK_START.md          # Setup and API quick reference
