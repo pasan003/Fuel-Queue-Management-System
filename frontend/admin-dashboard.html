@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Fuel Queue Management System</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Chart.js for statistics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+<!-- Navigation -->
+<nav class="admin-navbar">
+    <div class="container-fluid">
+        <div class="navbar-brand">
+            <h5 class="m-0"><i class="fas fa-shield-alt"></i> Admin Dashboard</h5>
+        </div>
+        <div class="navbar-menu">
+            <span id="adminName" class="navbar-text me-3"></span>
+            <button id="logoutBtn" class="btn btn-sm btn-outline-danger">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<!-- Sidebar Navigation -->
+<div class="admin-container">
+    <aside class="admin-sidebar">
+        <div class="sidebar-menu">
+            <a href="#" class="menu-item active" data-section="dashboard">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <a href="#" class="menu-item" data-section="users">
+                <i class="fas fa-users"></i> Users <span class="badge bg-primary" id="usersBadge" style="display:none;"></span>
+            </a>
+            <a href="#" class="menu-item" data-section="stations">
+                <i class="fas fa-gas-pump"></i> Stations <span class="badge bg-warning" id="stationsBadge" style="display:none;"></span>
+            </a>
+            <a href="#" class="menu-item" data-section="reports">
+                <i class="fas fa-flag"></i> Reports <span class="badge bg-danger" id="reportsBadge" style="display:none;"></span>
+            </a>
+            <a href="#" class="menu-item" data-section="alerts">
+                <i class="fas fa-bell"></i> Alerts <span class="badge bg-danger" id="alertsBadge" style="display:none;"></span>
+            </a>
+            <a href="#" class="menu-item" data-section="audit">
+                <i class="fas fa-history"></i> Audit Logs
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Dashboard Section -->
+        <section id="dashboardSection" class="content-section">
+            <div class="section-header">
+                <h2>Dashboard</h2>
+                <p class="text-muted">System overview and statistics</p>
+            </div>
+
+            <!-- Alert Cards -->
+            <div id="alertsContainer" class="alert-cards mb-4" style="display:none;"></div>
+
+            <!-- Stats Grid -->
+            <div class="row mb-4" id="statsGrid">
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        <div class="stat-content">
+                            <p class="stat-label">Total Users</p>
+                            <h3 id="statTotalUsers">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-gas-pump"></i></div>
+                        <div class="stat-content">
+                            <p class="stat-label">Stations</p>
+                            <h3 id="statTotalStations">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-flag"></i></div>
+                        <div class="stat-content">
+                            <p class="stat-label">Reports</p>
+                            <h3 id="statTotalReports">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-traffic-light"></i></div>
+                        <div class="stat-content">
+                            <p class="stat-label">Active Queues</p>
+                            <h3 id="statActiveQueues">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <div class="col-lg-6 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="m-0">User Distribution</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="userChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="m-0">Reports Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="reportChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="m-0">Station Approval Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="stat-row">
+                                <span>Pending</span>
+                                <strong id="stationPending">0</strong>
+                            </div>
+                            <div class="stat-row">
+                                <span>Approved</span>
+                                <strong id="stationApproved">0</strong>
+                            </div>
+                            <div class="stat-row">
+                                <span>Rejected</span>
+                                <strong id="stationRejected">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="m-0">Fuel Availability</h6>
+                        </div>
+                        <div class="card-body" id="fuelAvailability"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Users Section -->
+        <section id="usersSection" class="content-section" style="display:none;">
+            <div class="section-header">
+                <h2>User Management</h2>
+                <p class="text-muted">Manage system users and permissions</p>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" id="userSearch" class="form-control" placeholder="Search by name, email...">
+                        </div>
+                        <div class="col-md-3">
+                            <select id="userRoleFilter" class="form-select">
+                                <option value="">All Roles</option>
+                                <option value="customer">Customer</option>
+                                <option value="owner">Station Owner</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="userStatusFilter" class="form-select">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button id="userRefreshBtn" class="btn btn-primary w-100">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="usersTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Stations</th>
+                                <th>Joined</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-muted">
+                    <div id="usersPagination"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stations Section -->
+        <section id="stationsSection" class="content-section" style="display:none;">
+            <div class="section-header">
+                <h2>Station Management</h2>
+                <p class="text-muted">Approve and manage fuel stations</p>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <input type="text" id="stationSearch" class="form-control" placeholder="Search by name, location...">
+                        </div>
+                        <div class="col-md-3">
+                            <select id="stationStatusFilter" class="form-select">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button id="stationRefreshBtn" class="btn btn-primary w-100">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stations Table -->
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="stationsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Station Name</th>
+                                <th>Owner</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Queue</th>
+                                <th>Fuel</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stationsTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-muted">
+                    <div id="stationsPagination"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="reportsSection" class="content-section" style="display:none;">
+            <div class="section-header">
+                <h2>Reports Moderation</h2>
+                <p class="text-muted">Review and manage user-submitted reports</p>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" id="reportSearch" class="form-control" placeholder="Search reports...">
+                        </div>
+                        <div class="col-md-3">
+                            <select id="reportStatusFilter" class="form-select">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="reviewed">Reviewed</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="spam">Spam</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button id="reportRefreshBtn" class="btn btn-primary w-100">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Table -->
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="reportsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Reporter</th>
+                                <th>Station</th>
+                                <th>Comment</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-muted">
+                    <div id="reportsPagination"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Alerts Section -->
+        <section id="alertsSection" class="content-section" style="display:none;">
+            <div class="section-header">
+                <h2>System Alerts</h2>
+                <p class="text-muted">Suspicious activity and system notifications</p>
+            </div>
+
+            <!-- Alerts Actions -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <button id="acknowledgeAllBtn" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-check-circle"></i> Acknowledge All
+                    </button>
+                    <button id="alertRefreshBtn" class="btn btn-sm btn-outline-primary ms-2">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Alerts Table -->
+            <div class card">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="alertsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Severity</th>
+                                <th>Title</th>
+                                <th>Message</th>
+                                <th>Created</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alertsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Audit Logs Section -->
+        <section id="auditSection" class="content-section" style="display:none;">
+            <div class="section-header">
+                <h2>Audit Logs</h2>
+                <p class="text-muted">Admin action history and system changes</p>
+            </div>
+
+            <!-- Export & Filter -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" id="auditSearch" class="form-control" placeholder="Search actions...">
+                        </div>
+                        <div class="col-md-3">
+                            <select id="auditActionFilter" class="form-select">
+                                <option value="">All Actions</option>
+                                <option value="user_suspended">User Suspended</option>
+                                <option value="user_activated">User Activated</option>
+                                <option value="user_deleted">User Deleted</option>
+                                <option value="station_approved">Station Approved</option>
+                                <option value="station_rejected">Station Rejected</option>
+                                <option value="report_reviewed">Report Reviewed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button id="auditRefreshBtn" class="btn btn-primary w-100">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button id="exportUsersBtn" class="btn btn-outline-success btn-sm w-100">
+                                <i class="fas fa-download"></i> Export Users
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Logs Table -->
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0" id="auditTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Admin</th>
+                                <th>Action</th>
+                                <th>Entity</th>
+                                <th>Description</th>
+                                <th>IP Address</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-muted">
+                    <div id="auditPagination"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Modals -->
+
+<!-- User Action Modal -->
+<div class="modal fade" id="userActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userActionTitle">User Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="userActionMessage"></p>
+                <textarea id="userActionReason" class="form-control" placeholder="Reason (required for suspension/deletion)" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmUserActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Station Action Modal -->
+<div class="modal fade" id="stationActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stationActionTitle">Station Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="stationActionMessage"></p>
+                <textarea id="stationActionReason" class="form-control" placeholder="Reason (required for rejection)" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmStationActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Action Modal -->
+<div class="modal fade" id="reportActionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportActionTitle">Review Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reportDetails"></div>
+                <textarea id="reportAdminNotes" class="form-control mt-3" placeholder="Admin notes..." rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" id="reportSpamBtn">Mark as Spam</button>
+                <button type="button" class="btn btn-success" id="reportResolveBtn">Resolve</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/admin.js"></script>
+
+</body>
+</html>
