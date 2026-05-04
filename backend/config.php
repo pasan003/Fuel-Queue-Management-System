@@ -125,3 +125,124 @@ function write_users(array $users): void {
     ensure_data_dir();
     file_put_contents(USERS_FILE, json_encode($users, JSON_PRETTY_PRINT));
 }
+
+/**
+ * ========================================================================
+ * ADMIN AUTHORIZATION & MIDDLEWARE (FOR ADMIN DASHBOARD)
+ * ========================================================================
+ */
+
+/**
+ * Require admin login and check role. Halts with 403 if not admin.
+ */
+function require_admin_json(): void {
+    session_boot();
+    if (empty($_SESSION['user_id'])) {
+        json_response(401, ['ok' => false, 'message' => 'Authentication required']);
+    }
+    if (($_SESSION['role'] ?? '') !== 'admin') {
+        json_response(403, ['ok' => false, 'message' => 'Admin access required']);
+    }
+}
+
+/**
+ * Log admin action to audit_logs table
+ */
+function log_admin_action(
+    PDO $pdo,
+    int $adminUserId,
+    string $actionType,
+    string $entityType,
+    ?int $entityId,
+    string $description = '',
+    ?array $oldValue = null,
+    ?array $newValue = null
+): void {
+    try {
+        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+        $oldJson = $oldValue ? json_encode($oldValue) : null;
+        $newJson = $newValue ? json_encode($newValue) : null;
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO audit_logs 
+            (admin_user_id, action_type, entity_type, entity_id, description, old_value, new_value, ip_address)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $adminUserId,
+            $actionType,
+            $entityType,
+            $entityId,
+            $description,
+            $oldJson,
+            $newJson,
+            $ipAddress,
+        ]);
+    } catch (Exception $e) {
+        // Log action failures silently to avoid breaking main request
+        error_log('Audit log failed: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Create admin alert for suspicious activity
+ */
+function create_admin_alert(
+    PDO $pdo,
+    string $alertType,
+    string $severity,
+    string $title,
+    string $message,
+    ?string $entityType = null,
+    ?int $entityId = null
+): void {
+    try {
+        $stmt = $pdo->prepare(
+            'INSERT INTO admin_alerts 
+            (alert_type, severity, title, message, entity_type, entity_id)
+            VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $alertType,
+            $severity,
+            $title,
+            $message,
+            $entityType,
+            $entityId,
+        ]);
+    } catch (Exception $e) {
+        error_log('Alert creation failed: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Get current logged-in user's ID from session
+ */
+function get_current_user_id(): ?int {
+    session_boot();
+    return !empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+}
+
+/**
+ * Get current user's role
+ */
+function get_current_user_role(): ?string {
+    session_boot();
+    return $_SESSION['role'] ?? null;
+}
+
+/**
+ * Require both POST method and admin authorization
+ */
+function require_admin_post(): void {
+    require_post();
+    require_admin_json();
+}
+
+/**
+ * Require both GET method and admin authorization
+ */
+function require_admin_get(): void {
+    require_get();
+    require_admin_json();
+}
