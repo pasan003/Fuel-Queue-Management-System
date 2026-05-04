@@ -2,8 +2,15 @@
 
 A modern web application for checking real-time fuel availability and queue status at fuel stations. Customers can browse stations and see estimated wait times, while station owners can manage fuel availability and track queue metrics for their station.
 
-**Version**: 2.0
+**Version**: 2.1 (with Admin Dashboard)
 **Status**: Production Ready ✅
+
+### 🆕 Admin Dashboard (v2.1)
+The production-level Admin Dashboard is now fully functional! 
+- **Admin Login**: ✅ Working
+- **Email**: `admin@fqms.lk`
+- **Password**: `admin123`
+- See [Admin Setup Guide](ADMIN_SETUP.md) for complete details
 
 ---
 
@@ -306,34 +313,72 @@ All endpoints require admin authentication and return JSON.
 
 ### Creating Admin Accounts
 
-**Method 1: Database Direct**
+An admin account has been **pre-configured** in the database:
+
+#### 🔑 Default Admin Credentials
+- **Email**: `admin@fqms.lk`
+- **Password**: `admin123`
+- **Role**: `admin`
+- **Status**: Active
+
+#### ✅ Login Steps
+1. Navigate to [login.html](frontend/login.html)
+2. Enter email: `admin@fqms.lk`
+3. Enter password: `admin123`
+4. You will be redirected to the **Admin Dashboard**
+
+#### 🔒 Security - IMPORTANT
+
+**Immediately after first login:**
+- ⚠️ **Change the default password** to a strong password
+- Update your profile with your actual name
+- Use 12+ characters, mixed case, numbers, and symbols
+- Never share admin credentials
+
+#### Creating Additional Admin Accounts
+
+To create additional admin accounts, use a MySQL client:
+
 ```sql
--- Generate secure password hash (replace YourSecurePassword):
--- php -r "echo password_hash('YourSecurePassword', PASSWORD_DEFAULT);"
+-- Generate a secure password hash
+-- Option A: Use PHP CLI:
+-- php -r "echo password_hash('YourSecurePassword123', PASSWORD_DEFAULT);"
 
+-- Option B: Run this query with an MD5 or similar (NOT recommended for production)
+
+-- Then insert:
 INSERT INTO users (name, national_id, email, password, role, is_active)
-VALUES ('Admin Name', '000000001', 'admin@fqms.local', '[hashed_password]', 'admin', 1);
+VALUES (
+  'Second Admin Name',
+  '000000002',
+  'admin2@fqms.lk',
+  '$2y$10$[paste_generated_hash_here]',
+  'admin',
+  1
+);
 ```
 
-**Method 2: Via Backdoor Script** (use in development only)
-Create `backend/create_admin.php`:
-```php
-<?php
-require 'config.php';
-$pdo = db();
-$email = 'admin@example.com';
-$password = password_hash('SecurePassword123', PASSWORD_DEFAULT);
-$stmt = $pdo->prepare('INSERT INTO users (name, national_id, email, password, role) VALUES (?, ?, ?, ?, ?)');
-$stmt->execute(['System Admin', '000000000', $email, $password, 'admin']);
-echo "Admin account created: $email";
-?>
-```
+**Recommended**: Use the test script `backend/test-admin-login.php` to verify admin credentials work before changing them.
 
-**IMPORTANT**: 
-- Change default passwords immediately in production
-- Store passwords securely
-- Use strong, unique passwords (12+ characters, mixed case, numbers, symbols)
-- Remove creation scripts after use
+#### Troubleshooting Admin Login
+
+If admin login fails with "Invalid credentials":
+
+1. **Verify the account exists**:
+   ```sql
+   SELECT user_id, name, email, role, is_active FROM users WHERE email = 'admin@fqms.lk';
+   ```
+
+2. **Test password verification** (run from command line):
+   ```bash
+   php backend/test-admin-login.php
+   ```
+
+3. **If password is wrong**, regenerate:
+   ```bash
+   php backend/generate-hash.php
+   ```
+   Then update: `UPDATE users SET password = '[new_hash]' WHERE email = 'admin@fqms.lk';`
 
 ### Database Schema Updates
 
