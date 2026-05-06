@@ -776,15 +776,26 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 
 // Check authentication and load initial data
 window.addEventListener('load', async () => {
-    // Get user info (if logged in)
+    // Check if user is admin (client-side protection)
+    const userType = localStorage.getItem('userType');
+    if (userType !== 'admin') {
+        console.warn('Unauthorized: User is not an admin');
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // Get user info and verify admin role (server-side protection)
     try {
         const response = await fetch('../backend/stations.php');
         if (response.status === 401) {
+            console.warn('Session expired or unauthorized');
+            localStorage.clear();
             window.location.href = 'login.html';
             return;
         }
     } catch (error) {
         console.error('Auth check failed:', error);
+        // Don't block on network error, let user try to access
     }
 
     // Set admin name from session (if available)

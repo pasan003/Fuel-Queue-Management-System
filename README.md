@@ -12,6 +12,12 @@ The production-level Admin Dashboard is now fully functional!
 - **Password**: `admin123`
 - See [Admin Setup Guide](ADMIN_SETUP.md) for complete details
 
+### 🔧 Recent Fixes (May 2026)
+**Login Issue Fixed**: Admin login was failing with "Invalid credentials" even with correct email and password.
+- **Root Cause**: Admin user in database had invalid/mismatched password hash
+- **Fix Applied**: Updated admin password hash to correct bcrypt hash for `admin123`
+- **Status**: ✅ Verified working - all login tests pass
+
 ---
 
 ## 📖 Problem Statement
@@ -134,6 +140,99 @@ Database settings are located in `backend/config.php` and default to:
 1. Place the repository in your server document root.
 2. Start **Apache** and **MySQL**.
 3. Navigate to: `http://localhost/Fuel-Queue-Management-System/frontend/login.html` (Adjust the path based on your setup).
+
+### 🔐 Admin Login & Setup (NEW - v2.1)
+
+The Admin Dashboard now fully supports the admin role. Follow these steps to set up admin access:
+
+#### Step 1: Update Database Schema
+Before importing or if already imported, ensure the users table includes the `admin` role:
+
+**Option A - Fresh Installation**:
+```sql
+-- Import fqms.sql which includes admin role support
+mysql -u root -p fqms < database/fqms.sql
+```
+
+**Option B - Existing Installation**:
+```sql
+-- Run the admin schema update
+mysql -u root -p fqms < database/admin_schema_update.sql
+```
+
+This adds:
+- `admin` role to the users table enum
+- Account status tracking (`is_active`, `suspension_reason`, `suspended_at`, `suspended_by`)
+- Station approval workflow
+- Report status tracking
+- Audit logging tables
+
+#### Step 2: Create Admin Account
+After schema update, create the admin user:
+
+```sql
+-- Import the admin insert script
+mysql -u root -p fqms < database/admin_insert.sql
+```
+
+**Default Admin Credentials**:
+- **Email**: `admin@fqms.lk`
+- **Password**: `admin123`
+
+#### Step 3: Login as Admin
+1. Go to: `http://localhost/Fuel-Queue-Management-System/frontend/login.html`
+2. Enter email: `admin@fqms.lk`
+3. Enter password: `admin123`
+4. You will be redirected to: `http://localhost/Fuel-Queue-Management-System/frontend/admin-dashboard.html`
+
+#### Security Notes
+- ⚠️ **IMPORTANT**: Change the admin password immediately after first login!
+- To generate a secure password hash in PHP: `php -r "echo password_hash('your_secure_password', PASSWORD_DEFAULT);"`
+- Update database manually: `UPDATE users SET password = 'hashed_password_here' WHERE email = 'admin@fqms.lk';`
+- Admin access is role-restricted on both frontend and backend
+- All admin actions are logged in the audit_logs table with IP address and timestamp
+
+#### How Admin Login Works
+1. **Backend** (`backend/login.php`):
+   - Accepts login with username (email) and password
+   - Verifies password using `password_verify()` against the hashed database password
+   - Detects admin role and returns `"role": "admin"` in response
+   - Sets `$_SESSION['role'] = 'admin'` for server-side authorization
+
+2. **Frontend** (`frontend/js/auth.js`):
+   - Stores user role in localStorage: `userType = 'admin'`
+   - Redirects to `admin-dashboard.html` for admin users
+
+3. **Dashboard Protection** (`frontend/admin-dashboard.html`):
+   - Client-side check: Redirects to login if `userType !== 'admin'`
+   - JavaScript protection in `admin.js` verifies admin role on page load
+
+4. **API Protection** (`backend/admin/*.php`):
+   - All admin endpoints call `require_admin_json()`
+   - Returns 403 Forbidden if `$_SESSION['role'] !== 'admin'`
+   - Ensures only admins can access admin functionality
+
+#### Troubleshooting Admin Login
+
+**Problem: Login fails with "Invalid credentials"**
+- Verify admin user exists: `SELECT * FROM users WHERE email = 'admin@fqms.lk';`
+- Check password hash is valid: Hash should start with `$2y$`
+- Ensure MySQL is running and database is updated with schema
+
+**Problem: Redirects to login after successful login**
+- Verify role column contains `'admin'` (case-sensitive)
+- Check localStorage has `userType = 'admin'`
+- Open browser console for JavaScript errors
+
+**Problem: Admin dashboard shows "Admin access required"**
+- This means session role is not recognized as admin
+- Verify `$_SESSION['role']` by adding debug: Check browser cookies for PHP session ID
+- Ensure backend/admin/*.php endpoints are being called correctly
+
+**Problem: Dashboard shows empty or no data loads**
+- Verify admin user has proper role in database
+- Check browser console for JavaScript errors
+- Ensure database tables (audit_logs, admin_alerts, system_settings) exist
 
 ---
 

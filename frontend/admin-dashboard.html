@@ -20,6 +20,16 @@
 
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/admin.css">
+
+    <script>
+        // Protect admin dashboard: redirect non-admin users
+        (function() {
+            const userType = localStorage.getItem('userType');
+            if (userType !== 'admin') {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
 </head>
 <body class="admin-body">
 

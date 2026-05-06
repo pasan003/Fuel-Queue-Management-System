@@ -25,11 +25,18 @@ CREATE TABLE `users` (
   `national_id` varchar(50) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `role` enum('customer','owner') NOT NULL DEFAULT 'customer',
+  `role` enum('customer','owner','admin') NOT NULL DEFAULT 'customer',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '1 = active, 0 = suspended',
+  `suspension_reason` varchar(255) DEFAULT NULL,
+  `suspended_at` timestamp NULL,
+  `suspended_by` int DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `uq_users_email` (`email`),
-  UNIQUE KEY `uq_users_national_id` (`national_id`)
+  UNIQUE KEY `uq_users_national_id` (`national_id`),
+  KEY `idx_role_active` (`role`, `is_active`),
+  KEY `idx_suspended_by` (`suspended_by`),
+  CONSTRAINT `fk_user_suspended_by` FOREIGN KEY (`suspended_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
