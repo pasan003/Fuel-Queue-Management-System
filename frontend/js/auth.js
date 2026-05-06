@@ -72,11 +72,14 @@ function togglePasswordBy(inputId, iconEl) {
 }
 
 /**
- * Redirect after login based on role (customer vs owner).
- * @param {string} userType - "customer" or "owner"
+ * Redirect after login based on role (customer vs owner vs admin).
+ * @param {string} userType - "customer", "owner", or "admin"
  * @returns {string} redirect URL
  */
 function getRedirectURL(userType) {
+  if (userType === "admin") {
+    return "admin-dashboard.html";
+  }
   if (userType === "owner") {
     return "owner-dashboard.html";
   }
@@ -126,6 +129,7 @@ function clearUserSession() {
   localStorage.removeItem("loginTime");
   localStorage.removeItem("userId");
   localStorage.removeItem("userEmail");
+  localStorage.removeItem("adminName");
 }
 
 function initLogin() {
@@ -165,12 +169,17 @@ function initLogin() {
     try {
       const result = await postForm("../backend/login.php", form);
 
-      const userType = result.user?.userType || "customer";
+      const userType = result.user?.userType || result.user?.role || "customer";
       const fullName = result.user?.fullName || username;
       const uid = result.user?.id;
       const em = result.user?.email || username;
 
       storeUserSession(userType, fullName, uid, em);
+
+      // Store admin name for admin dashboard
+      if (userType === "admin") {
+        localStorage.setItem("adminName", fullName);
+      }
 
       window.location.href = getRedirectURL(userType);
     } catch (err) {
