@@ -12,34 +12,6 @@ body.auth-body {
   position: relative;
 }
 
-/* Background cars (auth pages only) */
-.car {
-  position: absolute;
-  font-size: 26px;
-  color: rgba(255, 255, 255, 0.6);
-  z-index: 0;
-}
-
-.car-top {
-  top: 5%;
-  animation: moveRight 10s linear infinite;
-}
-
-.car-bottom {
-  bottom: 5%;
-  animation: moveLeft 12s linear infinite;
-}
-
-@keyframes moveRight {
-  0% { left: -60px; }
-  100% { left: 110%; }
-}
-
-@keyframes moveLeft {
-  0% { left: 110%; }
-  100% { left: -60px; }
-}
-
 /* Shared auth card base */
 .auth-card {
   position: relative;
