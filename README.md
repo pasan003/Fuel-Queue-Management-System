@@ -139,6 +139,7 @@ Fuel-Queue-Management-System/
 1. Start **MySQL** (e.g., via XAMPP Control Panel).
 2. Open **phpMyAdmin** or your preferred MySQL client.
 3. Import **`database/fqms.sql`** to create the `fqms` database, necessary tables, and initial demo data.
+4. (Optional) Import **`database/sample_stations_seed.sql`** to add multiple demo stations with coordinates for the map.
 
 ### Configuration
 Database settings are located in `backend/config.php` and default to:
@@ -584,27 +585,37 @@ The system now includes interactive maps powered by **Leaflet.js** with **OpenSt
 ### Map Features
 
 - **User Dashboard Map** (`frontend/dashboard.html`):
-  - Displays all fuel stations with dynamic markers (when coordinates are available in the database).
-  - Default center: Sri Lanka (6.9271, 79.8612) | Zoom: 13
-  - Click markers to see station name and location
+  - Displays **all fuel stations dynamically from the database** (via `backend/stations.php`) as markers (only when coordinates are available).
+  - Default center: **Sri Lanka** (6.9271, 79.8612) | Default zoom: **7** (auto-fits bounds when multiple stations have coordinates).
+  - Click markers to see:
+    - Station name + location
+    - Fuel availability (Petrol/Diesel/Both/None)
+    - Queue length (vehicles)
+    - Available (Yes/No)
   - Map container: 400px height, responsive design
 
 - **Owner Dashboard Map** (`frontend/owner-dashboard.html`):
-  - Shows the owner's station location with a marker
-  - Default center: Sri Lanka (6.9271, 79.8612) if coordinates not set
-  - Updates marker position when coordinates are available
-  - Shows popup: "Fuel Station Location"
+  - Displays **multiple stations dynamically** (same data source as the user dashboard) for quick comparison.
+  - Also pins **your station** (when coordinates are set) with a "Your Station" popup.
+  - Default center: Sri Lanka (6.9271, 79.8612) if coordinates are not set (auto-fits bounds when other stations have coordinates).
   - Map container: 400px height, responsive design
+
+### Marker Colors
+
+Markers are color-coded based on station status returned by the backend:
+- **Green**: `available`
+- **Yellow**: `limited`
+- **Red**: `nofuel`
 
 ### Technical Implementation
 
 **Frontend Files Updated**:
 - `frontend/dashboard.html` — Leaflet CSS/JS CDN includes (v1.9.4), map container `<div id="mapUser">`
 - `frontend/owner-dashboard.html` — Leaflet CSS/JS CDN includes (v1.9.4), map container `<div id="mapOwner">`
-- `frontend/css/dashboard.css` — `.map-container` styling (400px height, rounded corners, dashed border)
+- `frontend/css/dashboard.css` — `.map-container` styling + status-colored marker + popup styling
 - `frontend/css/owner-dashboard.css` — `.map-container` styling
-- `frontend/js/dashboard.js` — `initUserMap()` function, `addMarkersFromState()` function, marker handling
-- `frontend/js/owner-dashboard.js` — `initOwnerMap()` function, marker management
+- `frontend/js/dashboard.js` — initializes Leaflet, fetches stations, validates coordinates, renders **multiple markers** + popups
+- `frontend/js/owner-dashboard.js` — initializes Leaflet, loads owner station + also renders **multiple markers** + popups
 
 **Backend Files Updated**:
 - `backend/stations.php` — Returns `latitude` and `longitude` fields (float|null) for each station
@@ -639,6 +650,24 @@ The system now includes interactive maps powered by **Leaflet.js** with **OpenSt
 UPDATE fuel_stations 
 SET latitude = 6.9271, longitude = 79.8612 
 WHERE station_id = 1;
+```
+
+### Adding Coordinates for New Stations
+
+When a new station is created (owner registration flow), you can set coordinates later in MySQL:
+
+```sql
+UPDATE fuel_stations
+SET latitude = 7.2906, longitude = 80.6337
+WHERE station_id = 2;
+```
+
+### Importing Sample Stations (Quick Demo)
+
+To quickly populate multiple stations (with queue + availability + coordinates) for Leaflet markers:
+
+```bash
+mysql -u root -p fqms < database/sample_stations_seed.sql
 ```
 
 **Method 2: Edit Default Center in Code**

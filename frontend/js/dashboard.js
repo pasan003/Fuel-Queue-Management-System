@@ -22,22 +22,74 @@ const state = { query: "", filter: "all", stations: [], loadError: null };
 // Leaflet map references for user dashboard
 let userMap = null;
 let userMarkersLayer = null;
+let userMarkerIcons = null;
+
+function isValidLatLng(lat, lng) {
+  const a = Number(lat);
+  const b = Number(lng);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+  if (a < -90 || a > 90) return false;
+  if (b < -180 || b > 180) return false;
+  return true;
+}
+
+function getFuelText(s) {
+  const p = Boolean(s.petrol);
+  const d = Boolean(s.diesel);
+  if (p && d) return "Petrol & Diesel";
+  if (p) return "Petrol";
+  if (d) return "Diesel";
+  return "None";
+}
+
+function getAvailabilityText(s) {
+  const any = Boolean(s.petrol) || Boolean(s.diesel);
+  return any ? "Yes" : "No";
+}
+
+function getMarkerIcons() {
+  if (userMarkerIcons) return userMarkerIcons;
+  if (typeof L === "undefined") return null;
+
+  function icon(className) {
+    return L.divIcon({
+      className: `fqms-marker ${className}`,
+      html: '<span class="fqms-marker__dot" aria-hidden="true"></span>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+      popupAnchor: [0, -10],
+    });
+  }
+
+  userMarkerIcons = {
+    available: icon("fqms-marker--available"),
+    limited: icon("fqms-marker--limited"),
+    nofuel: icon("fqms-marker--nofuel"),
+    fallback: icon("fqms-marker--limited"),
+  };
+  return userMarkerIcons;
+}
 
 function initUserMap() {
   const el = document.getElementById('mapUser');
   if (!el || typeof L === 'undefined') return;
 
+  // Sri Lanka default (Colombo) — zoomed out enough to show island context.
   const defaultCenter = [6.9271, 79.8612];
   try {
     if (!userMap) {
-      userMap = L.map(el).setView(defaultCenter, 13);
+      userMap = L.map(el).setView(defaultCenter, 7);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(userMap);
       userMarkersLayer = L.layerGroup().addTo(userMap);
+      // Ensure proper sizing when layout/animations finish.
+      setTimeout(() => {
+        try { userMap?.invalidateSize(); } catch (_) {}
+      }, 50);
     } else {
-      userMap.setView(defaultCenter, 13);
+      userMap.setView(defaultCenter, 7);
     }
   } catch (err) {
     console.warn('Leaflet init failed', err);
@@ -47,24 +99,55 @@ function initUserMap() {
 function addMarkersFromState() {
   if (!userMap || !userMarkersLayer) return;
   userMarkersLayer.clearLayers();
+  const icons = getMarkerIcons();
+  const points = [];
+
   (state.stations || []).forEach((s) => {
     const lat = s.latitude ?? null;
     const lng = s.longitude ?? null;
-    if (lat !== null && lng !== null) {
-      try {
-        const marker = L.marker([Number(lat), Number(lng)]);
-        marker.bindPopup(`<strong>${escapeHtml(s.station_name)}</strong><br>${escapeHtml(s.location || '')}`);
-        marker.addTo(userMarkersLayer);
-      } catch (err) {
-        // ignore invalid coords
-      }
+    if (lat === null || lng === null) return;
+    if (!isValidLatLng(lat, lng)) return;
+
+    try {
+      const status = String(s.status || "");
+      const icon =
+        (icons && (status === "available" || status === "limited" || status === "nofuel"))
+          ? icons[status]
+          : (icons?.fallback || undefined);
+
+      const marker = L.marker([Number(lat), Number(lng)], icon ? { icon } : undefined);
+      const popupHtml = [
+        `<div class="fqms-popup">`,
+        `<div class="fqms-popup__title">${escapeHtml(s.station_name)}</div>`,
+        s.location ? `<div class="fqms-popup__meta"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(s.location)}</div>` : ``,
+        `<div class="fqms-popup__row"><strong>Fuel</strong>: ${escapeHtml(getFuelText(s))}</div>`,
+        `<div class="fqms-popup__row"><strong>Queue</strong>: ${Number(s.queue_length ?? 0)} Vehicles</div>`,
+        `<div class="fqms-popup__row"><strong>Available</strong>: ${escapeHtml(getAvailabilityText(s))}</div>`,
+        `</div>`,
+      ].join("");
+
+      marker.bindPopup(popupHtml);
+      marker.addTo(userMarkersLayer);
+      points.push([Number(lat), Number(lng)]);
+    } catch (err) {
+      // ignore invalid coords / leaflet issues per-station
     }
   });
+
+  // Fit map view to markers when available; otherwise keep Sri Lanka default.
+  try {
+    if (points.length === 1) {
+      userMap.setView(points[0], 13);
+    } else if (points.length > 1) {
+      const bounds = L.latLngBounds(points);
+      userMap.fitBounds(bounds.pad(0.2), { animate: false });
+    }
+  } catch (_) {}
 }
 
 function escapeHtml(str) {
   if (!str) return '';
-  return String(str).replace(/[&<>"]+/g, function (s) {
+  return String(str).replace(/[&<>"]/g, function (s) {
     return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]);
   });
 }
