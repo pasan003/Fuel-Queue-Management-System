@@ -227,6 +227,48 @@ body {
 .dot.yellow { background: var(--status-limited); }
 .dot.red { background: var(--status-nofuel); }
 
+/* Leaflet markers (status-colored) */
+.fqms-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.fqms-marker__dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.22);
+}
+
+.fqms-marker--available .fqms-marker__dot { background: var(--status-available); }
+.fqms-marker--limited .fqms-marker__dot { background: var(--status-limited); }
+.fqms-marker--nofuel .fqms-marker__dot { background: var(--status-nofuel); }
+
+/* Leaflet popup tweaks */
+.fqms-popup__title {
+  font-weight: 900;
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+}
+
+.fqms-popup__meta {
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.fqms-popup__meta i {
+  color: var(--primary);
+  margin-right: 6px;
+}
+
+.fqms-popup__row {
+  margin-top: 4px;
+  font-weight: 700;
+}
+
 .stations-wrap { margin-top: 18px; padding: 18px; }
 
 .section-title {

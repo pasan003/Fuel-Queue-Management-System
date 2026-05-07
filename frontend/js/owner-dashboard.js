@@ -18,6 +18,61 @@ const ownerState = {
 // Leaflet map references
 let ownerMap = null;
 let ownerMarker = null;
+let ownerMarkersLayer = null;
+let ownerMarkerIcons = null;
+
+function isValidLatLng(lat, lng) {
+  const a = Number(lat);
+  const b = Number(lng);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+  if (a < -90 || a > 90) return false;
+  if (b < -180 || b > 180) return false;
+  return true;
+}
+
+function getFuelText(s) {
+  const p = Boolean(s.petrol);
+  const d = Boolean(s.diesel);
+  if (p && d) return "Petrol & Diesel";
+  if (p) return "Petrol";
+  if (d) return "Diesel";
+  return "None";
+}
+
+function getAvailabilityText(s) {
+  const any = Boolean(s.petrol) || Boolean(s.diesel);
+  return any ? "Yes" : "No";
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str).replace(/[&<>"]/g, function (s) {
+    return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[s]);
+  });
+}
+
+function getMarkerIcons() {
+  if (ownerMarkerIcons) return ownerMarkerIcons;
+  if (typeof L === "undefined") return null;
+
+  function icon(className) {
+    return L.divIcon({
+      className: `fqms-marker ${className}`,
+      html: '<span class="fqms-marker__dot" aria-hidden="true"></span>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+      popupAnchor: [0, -10],
+    });
+  }
+
+  ownerMarkerIcons = {
+    available: icon("fqms-marker--available"),
+    limited: icon("fqms-marker--limited"),
+    nofuel: icon("fqms-marker--nofuel"),
+    fallback: icon("fqms-marker--limited"),
+  };
+  return ownerMarkerIcons;
+}
 
 function calculateStatus() {
   const { petrolAvailable, dieselAvailable, queueLength } = ownerState;
@@ -284,23 +339,93 @@ function initOwnerMap() {
   try {
     // create map (idempotent)
     if (!ownerMap) {
-      ownerMap = L.map(el).setView(center, 13);
+      ownerMap = L.map(el).setView(center, ownerState.latitude && ownerState.longitude ? 13 : 7);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(ownerMap);
+      ownerMarkersLayer = L.layerGroup().addTo(ownerMap);
+      setTimeout(() => {
+        try { ownerMap?.invalidateSize(); } catch (_) {}
+      }, 50);
     } else {
-      ownerMap.setView(center, 13);
+      ownerMap.setView(center, ownerState.latitude && ownerState.longitude ? 13 : 7);
     }
 
-    if (ownerMarker) {
-      ownerMarker.setLatLng(center);
-    } else {
-      ownerMarker = L.marker(center).addTo(ownerMap).bindPopup('Fuel Station Location');
+    if (ownerMarker) ownerMarker.remove();
+    ownerMarker = null;
+
+    if (isValidLatLng(center[0], center[1])) {
+      ownerMarker = L.marker(center).addTo(ownerMap).bindPopup("Your Station");
     }
   } catch (err) {
     console.warn('Leaflet map init failed', err);
   }
+}
+
+async function loadAllStationsForOwnerMap() {
+  // Owner is allowed to call stations.php; it requires login.
+  try {
+    const data = await apiGet("../backend/stations.php");
+    if (!data?.ok || !Array.isArray(data.stations)) return [];
+    return data.stations;
+  } catch (_) {
+    return [];
+  }
+}
+
+function renderStationsOnOwnerMap(stations) {
+  if (!ownerMap || !ownerMarkersLayer) return;
+  ownerMarkersLayer.clearLayers();
+  const icons = getMarkerIcons();
+  const points = [];
+
+  (stations || []).forEach((s) => {
+    const lat = s.latitude ?? null;
+    const lng = s.longitude ?? null;
+    if (lat === null || lng === null) return;
+    if (!isValidLatLng(lat, lng)) return;
+
+    try {
+      const status = String(s.status || "");
+      const icon =
+        (icons && (status === "available" || status === "limited" || status === "nofuel"))
+          ? icons[status]
+          : (icons?.fallback || undefined);
+
+      const marker = L.marker([Number(lat), Number(lng)], icon ? { icon } : undefined);
+      const popupHtml = [
+        `<div class="fqms-popup">`,
+        `<div class="fqms-popup__title">${escapeHtml(s.station_name)}</div>`,
+        s.location ? `<div class="fqms-popup__meta"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(s.location)}</div>` : ``,
+        `<div class="fqms-popup__row"><strong>Fuel</strong>: ${escapeHtml(getFuelText(s))}</div>`,
+        `<div class="fqms-popup__row"><strong>Queue</strong>: ${Number(s.queue_length ?? 0)} Vehicles</div>`,
+        `<div class="fqms-popup__row"><strong>Available</strong>: ${escapeHtml(getAvailabilityText(s))}</div>`,
+        `</div>`,
+      ].join("");
+      marker.bindPopup(popupHtml);
+      marker.addTo(ownerMarkersLayer);
+      points.push([Number(lat), Number(lng)]);
+    } catch (_) {
+      // ignore invalid coords
+    }
+  });
+
+  try {
+    const ownLat = ownerState.latitude;
+    const ownLng = ownerState.longitude;
+    if (isValidLatLng(ownLat, ownLng)) {
+      ownerMap.setView([Number(ownLat), Number(ownLng)], 13);
+      return;
+    }
+    if (points.length > 1) {
+      ownerMap.fitBounds(L.latLngBounds(points).pad(0.2), { animate: false });
+    } else if (points.length === 1) {
+      ownerMap.setView(points[0], 13);
+    } else {
+      ownerMap.setView([6.9271, 79.8612], 7);
+    }
+  } catch (_) {}
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -430,6 +555,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateLastSavedTime();
   // initialize owner map (uses ownerState latitude/longitude if available)
   initOwnerMap();
+  // show all stations (dynamic markers) on owner map too
+  try {
+    const stations = await loadAllStationsForOwnerMap();
+    renderStationsOnOwnerMap(stations);
+  } catch (_) {}
 });
 
 async function performLogout(event) {
