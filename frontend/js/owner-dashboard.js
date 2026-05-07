@@ -10,8 +10,14 @@ const ownerState = {
   waitingTimeMins: 0,
   stationName: "",
   stationLocation: "",
+  latitude: null,
+  longitude: null,
   lastUpdated: new Date(),
 };
+
+// Leaflet map references
+let ownerMap = null;
+let ownerMarker = null;
 
 function calculateStatus() {
   const { petrolAvailable, dieselAvailable, queueLength } = ownerState;
@@ -257,11 +263,44 @@ async function loadOwnerStation() {
   ownerState.stationId = s.station_id;
   ownerState.stationName = s.station_name;
   ownerState.stationLocation = s.location || "";
+  ownerState.latitude = s.latitude ?? null;
+  ownerState.longitude = s.longitude ?? null;
   ownerState.petrolAvailable = Boolean(s.petrol);
   ownerState.dieselAvailable = Boolean(s.diesel);
   ownerState.queueLength = s.queue_length ?? 0;
   ownerState.waitingTimeMins = s.waiting_time ?? 0;
   ownerState.lastUpdated = new Date();
+}
+
+function initOwnerMap() {
+  const el = document.getElementById('mapOwner');
+  if (!el || typeof L === 'undefined') return;
+
+  const defaultCenter = [6.9271, 79.8612];
+  const center = (ownerState.latitude && ownerState.longitude)
+    ? [Number(ownerState.latitude), Number(ownerState.longitude)]
+    : defaultCenter;
+
+  try {
+    // create map (idempotent)
+    if (!ownerMap) {
+      ownerMap = L.map(el).setView(center, 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(ownerMap);
+    } else {
+      ownerMap.setView(center, 13);
+    }
+
+    if (ownerMarker) {
+      ownerMarker.setLatLng(center);
+    } else {
+      ownerMarker = L.marker(center).addTo(ownerMap).bindPopup('Fuel Station Location');
+    }
+  } catch (err) {
+    console.warn('Leaflet map init failed', err);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -389,6 +428,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   refreshUI();
   updateLastSavedTime();
+  // initialize owner map (uses ownerState latitude/longitude if available)
+  initOwnerMap();
 });
 
 async function performLogout(event) {

@@ -36,11 +36,21 @@ Fuel shortages and long queues make real-time visibility valuable. This project 
 - **Real-Time Station Data**: View all stations with current petrol/diesel availability, queue lengths, and computed status (Available / Limited / No Fuel).
 - **Smart Estimated Wait Times**: Instantly see how long the wait will be based on queue lengths.
 - **Search & Filter**: Easily find nearby or specific stations.
+- **Interactive Map**: View all fuel stations on an interactive Leaflet map with OpenStreetMap tiles.
 
 ### Owner Dashboard
 - **Station Management**: Owners manage the station linked to their account.
 - **Fuel Toggles**: Quickly update `fuel_availability` status for Petrol and Diesel.
 - **Queue Metrics**: View and update the current queue length.
+- **Station Map**: View your station's location on an interactive map.
+
+### Admin Dashboard
+- **User Management**: Manage users (suspend, activate, delete).
+- **Station Approval**: Review and approve pending fuel station registrations.
+- **Reports Moderation**: Moderate user-submitted reports and spam detection.
+- **System Alerts**: Monitor system alerts and notifications.
+- **Audit Logs**: Complete audit trail of all admin actions.
+- **Data Export**: Export users, stations, and reports to CSV.
 
 ### Estimated Waiting Time Logic
 - **Simple Formula**: `Estimated Waiting Time = Queue Length × 2 minutes`
@@ -53,7 +63,7 @@ Fuel shortages and long queues make real-time visibility valuable. This project 
 
 | Layer | Technologies |
 |--------|----------------|
-| **Frontend** | HTML5, CSS3, Bootstrap 5, Vanilla JavaScript |
+| **Frontend** | HTML5, CSS3, Bootstrap 5, Vanilla JavaScript, Leaflet.js (maps) |
 | **Backend** | PHP 8.x (PDO, Sessions, JSON APIs) |
 | **Database** | MySQL 8.x (InnoDB) |
 
@@ -567,8 +577,91 @@ For more details, see [WAITING_TIME_LOGIC.md](docs/WAITING_TIME_LOGIC.md) and [Q
 
 ---
 
-## 🔮 Future Enhancements
-- 🗺️ Google Maps integration for station locations.
+## �️ Leaflet Map Integration
+
+The system now includes interactive maps powered by **Leaflet.js** with **OpenStreetMap** tiles — no API keys or Google Maps required.
+
+### Map Features
+
+- **User Dashboard Map** (`frontend/dashboard.html`):
+  - Displays all fuel stations with dynamic markers (when coordinates are available in the database).
+  - Default center: Sri Lanka (6.9271, 79.8612) | Zoom: 13
+  - Click markers to see station name and location
+  - Map container: 400px height, responsive design
+
+- **Owner Dashboard Map** (`frontend/owner-dashboard.html`):
+  - Shows the owner's station location with a marker
+  - Default center: Sri Lanka (6.9271, 79.8612) if coordinates not set
+  - Updates marker position when coordinates are available
+  - Shows popup: "Fuel Station Location"
+  - Map container: 400px height, responsive design
+
+### Technical Implementation
+
+**Frontend Files Updated**:
+- `frontend/dashboard.html` — Leaflet CSS/JS CDN includes (v1.9.4), map container `<div id="mapUser">`
+- `frontend/owner-dashboard.html` — Leaflet CSS/JS CDN includes (v1.9.4), map container `<div id="mapOwner">`
+- `frontend/css/dashboard.css` — `.map-container` styling (400px height, rounded corners, dashed border)
+- `frontend/css/owner-dashboard.css` — `.map-container` styling
+- `frontend/js/dashboard.js` — `initUserMap()` function, `addMarkersFromState()` function, marker handling
+- `frontend/js/owner-dashboard.js` — `initOwnerMap()` function, marker management
+
+**Backend Files Updated**:
+- `backend/stations.php` — Returns `latitude` and `longitude` fields (float|null) for each station
+- `backend/owner_station.php` — Returns station object with `latitude` and `longitude` fields
+
+**Database**:
+- `fuel_stations` table already has `latitude` and `longitude` columns (decimal type)
+
+### How It Works
+
+1. **Initialization**:
+   - Maps initialize on dashboard page load
+   - Leaflet library loads from CDN
+   - OpenStreetMap tiles layer added automatically
+
+2. **User Dashboard Markers**:
+   - Stations API is called to fetch all stations with coordinates
+   - For each station with valid `latitude` and `longitude`, a marker is added
+   - Clicking a marker shows: `<station_name>, <location>`
+   - If no stations have coordinates, no markers are shown (just base map)
+
+3. **Owner Dashboard Marker**:
+   - Owner's station details are loaded from `backend/owner_station.php`
+   - If coordinates exist (`latitude` and `longitude`), marker is placed at that location
+   - If coordinates don't exist, marker shows at default center (6.9271, 79.8612)
+   - Marker popup: "Fuel Station Location"
+
+### Customizing Map Coordinates
+
+**Method 1: Update Database (Recommended)**
+```sql
+UPDATE fuel_stations 
+SET latitude = 6.9271, longitude = 79.8612 
+WHERE station_id = 1;
+```
+
+**Method 2: Edit Default Center in Code**
+- Open `frontend/js/dashboard.js`
+- Change: `const defaultCenter = [6.9271, 79.8612];` (line ~27)
+- Open `frontend/js/owner-dashboard.js`
+- Change: `const defaultCenter = [6.9271, 79.8612];` (line ~282)
+
+### Browser Requirements
+- Modern browser with JavaScript enabled
+- Internet connection (for OpenStreetMap tile layer)
+- No API keys required
+
+### Future Enhancements
+- Admin UI to edit station coordinates
+- Real-time geolocation search
+- Proximity-based station ranking for users
+- Custom map markers and icons
+- Station cluster display for high-density areas
+
+---
+
+## �🔮 Future Enhancements
 - 📱 Customer-submitted real-time queue reports (with moderation).
 - 🔔 Push notifications for fuel availability alerts.
 - 📈 Advanced analytics and trend analysis.
@@ -576,6 +669,8 @@ For more details, see [WAITING_TIME_LOGIC.md](docs/WAITING_TIME_LOGIC.md) and [Q
 - 🌐 Multi-language support.
 - 📊 Customizable admin dashboard widgets.
 - ⚙️ Admin API rate limiting and request throttling.
+- 🗺️ Advanced map features (clustering, heatmaps, custom routing).
+- 🌍 Geolocation search for nearby stations.
 
 ---
 

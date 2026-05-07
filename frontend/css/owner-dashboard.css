@@ -398,6 +398,16 @@
   background: linear-gradient(90deg, var(--accent), #FF8A5E);
 }
 
+/* Map container for Owner Dashboard */
+.map-container {
+  width: 100%;
+  height: 400px;
+  min-height: 300px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px dashed rgba(13, 115, 119, 0.30);
+}
+
 .queue-card:nth-child(2):hover {
   border-color: rgba(255, 107, 53, 0.28);
   box-shadow: 0 8px 24px rgba(255, 107, 53, 0.12);
