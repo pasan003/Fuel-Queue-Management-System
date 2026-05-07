@@ -18,6 +18,8 @@
   <!-- Project CSS -->
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <!-- Leaflet (OpenStreetMap) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
   <div class="page">
@@ -111,13 +113,7 @@
 
       <!-- Map Section (UI only) -->
       <section class="panel map-card animate-in" style="animation-delay: 0.10s;">
-        <div class="map-placeholder">
-          <div>
-            <i class="fa-solid fa-map-location-dot"></i>
-            <div class="title">Map View (Google Maps Integration)</div>
-            <div class="sub">UI placeholder only — integrate Google Maps later</div>
-          </div>
-        </div>
+        <div id="mapUser" class="map-container" aria-label="Stations map (User view)"></div>
         <div class="legend" aria-label="Fuel status legend">
           <span class="legend-item"><span class="dot green"></span>Green = Available</span>
           <span class="legend-item"><span class="dot yellow"></span>Yellow = Limited</span>
@@ -171,6 +167,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/auth.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/dashboard.js"></script>
 </body>
 </html>

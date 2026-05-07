@@ -19,6 +19,56 @@ const FALLBACK_STATIONS = [
 
 const state = { query: "", filter: "all", stations: [], loadError: null };
 
+// Leaflet map references for user dashboard
+let userMap = null;
+let userMarkersLayer = null;
+
+function initUserMap() {
+  const el = document.getElementById('mapUser');
+  if (!el || typeof L === 'undefined') return;
+
+  const defaultCenter = [6.9271, 79.8612];
+  try {
+    if (!userMap) {
+      userMap = L.map(el).setView(defaultCenter, 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(userMap);
+      userMarkersLayer = L.layerGroup().addTo(userMap);
+    } else {
+      userMap.setView(defaultCenter, 13);
+    }
+  } catch (err) {
+    console.warn('Leaflet init failed', err);
+  }
+}
+
+function addMarkersFromState() {
+  if (!userMap || !userMarkersLayer) return;
+  userMarkersLayer.clearLayers();
+  (state.stations || []).forEach((s) => {
+    const lat = s.latitude ?? null;
+    const lng = s.longitude ?? null;
+    if (lat !== null && lng !== null) {
+      try {
+        const marker = L.marker([Number(lat), Number(lng)]);
+        marker.bindPopup(`<strong>${escapeHtml(s.station_name)}</strong><br>${escapeHtml(s.location || '')}`);
+        marker.addTo(userMarkersLayer);
+      } catch (err) {
+        // ignore invalid coords
+      }
+    }
+  });
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"]+/g, function (s) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]);
+  });
+}
+
 function statusLabel(status) {
   if (status === "available") return "Available";
   if (status === "limited") return "Limited";
@@ -324,6 +374,8 @@ function render() {
   emptyWrap.classList.toggle("d-none", filtered.length !== 0);
   wireOpenButtons(grid);
   wireUpdateQueueButtons(grid);
+  // update markers on the map to match filtered stations
+  try { addMarkersFromState(); } catch (e) { /* ignore if map not initialized */ }
 }
 
 function setActiveFilter(filter) {
@@ -340,6 +392,9 @@ async function loadStationsFromApi() {
     const data = await apiGet("../backend/stations.php");
     if (data.ok && Array.isArray(data.stations)) {
       state.stations = data.stations;
+      // initialize map and markers after loading stations
+      initUserMap();
+      addMarkersFromState();
       return;
     }
     throw new Error(data.message || "Invalid response");
@@ -351,6 +406,8 @@ async function loadStationsFromApi() {
     }
     state.stations = FALLBACK_STATIONS;
     state.loadError = "Using offline preview — connect MySQL and log in";
+    initUserMap();
+    addMarkersFromState();
   }
 }
 

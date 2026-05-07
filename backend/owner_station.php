@@ -28,7 +28,7 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 if ($method === 'GET') {
     $stmt = $pdo->prepare(
-        'SELECT station_id, station_name, location FROM fuel_stations WHERE owner_user_id = ? LIMIT 1'
+        'SELECT station_id, station_name, location, latitude, longitude FROM fuel_stations WHERE owner_user_id = ? LIMIT 1'
     );
     $stmt->execute([$uid]);
     $station = $stmt->fetch();
@@ -71,6 +71,8 @@ if ($method === 'GET') {
             'station_id' => $sid,
             'station_name' => (string)$station['station_name'],
             'location' => (string)($station['location'] ?? ''),
+            'latitude' => $station['latitude'] !== null ? (float)$station['latitude'] : null,
+            'longitude' => $station['longitude'] !== null ? (float)$station['longitude'] : null,
             'petrol' => $petrol,
             'diesel' => $diesel,
             'queue_length' => (int)($queue['queue_length'] ?? 0),
