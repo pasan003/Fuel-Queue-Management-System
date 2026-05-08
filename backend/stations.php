@@ -19,6 +19,15 @@ if (empty($_SESSION['user_id'])) {
     json_response(401, ['ok' => false, 'message' => 'Authentication required']);
 }
 
+$q = isset($_GET['q']) ? trim((string)$_GET['q']) : '';
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 0;
+if ($limit < 0) {
+    $limit = 0;
+}
+if ($limit > 50) {
+    $limit = 50;
+}
+
 $sql = <<<SQL
 SELECT
   fs.station_id,
@@ -37,10 +46,20 @@ FROM fuel_stations fs
 LEFT JOIN queue_status qs ON qs.station_id = fs.station_id
 LEFT JOIN fuel_availability p ON p.station_id = fs.station_id AND p.fuel_type_id = 1
 LEFT JOIN fuel_availability d ON d.station_id = fs.station_id AND d.fuel_type_id = 2
+WHERE (:q = '' OR fs.station_name LIKE :qLike OR fs.location LIKE :qLike)
 ORDER BY fs.station_name ASC
 SQL;
 
-$rows = $pdo->query($sql)->fetchAll();
+$stmt = $pdo->prepare($sql);
+$qLike = '%' . $q . '%';
+$stmt->execute([
+    ':q' => $q,
+    ':qLike' => $qLike,
+]);
+$rows = $stmt->fetchAll();
+if ($limit > 0) {
+    $rows = array_slice($rows, 0, $limit);
+}
 
 /** Matches frontend dashboard status filters (available / limited / nofuel). */
 function compute_station_status(bool $petrol, bool $diesel, int $queueLen): string {
