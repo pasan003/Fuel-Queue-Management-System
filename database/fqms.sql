@@ -135,7 +135,7 @@ CREATE TABLE `reports` (
 -- Demo station (no owner) — queue + availability for user dashboard smoke test
 -- ---------------------------------------------------------------------------
 INSERT INTO `fuel_stations` (`station_id`, `owner_user_id`, `station_name`, `location`, `latitude`, `longitude`, `created_at`) VALUES
-(1, NULL, 'Ceypetco — Colombo', 'Colombo', NULL, NULL, CURRENT_TIMESTAMP);
+(1, NULL, 'Ceypetco — Colombo', 'Colombo', 6.92710000, 79.86120000, CURRENT_TIMESTAMP);
 
 INSERT INTO `fuel_availability` (`station_id`, `fuel_type_id`, `is_available`, `last_updated`) VALUES
 (1, 1, 1, CURRENT_TIMESTAMP),

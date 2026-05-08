@@ -140,6 +140,7 @@ Fuel-Queue-Management-System/
 2. Open **phpMyAdmin** or your preferred MySQL client.
 3. Import **`database/fqms.sql`** to create the `fqms` database, necessary tables, and initial demo data.
 4. (Optional) Import **`database/sample_stations_seed.sql`** to add multiple demo stations with coordinates for the map.
+5. (Optional) Import **`database/users_seed.sql`** to seed demo users (admin/customer/owner) without duplicate-key errors.
 
 ### Configuration
 Database settings are located in `backend/config.php` and default to:
@@ -592,6 +593,13 @@ The system now includes interactive maps powered by **Leaflet.js** with **OpenSt
     - Fuel availability (Petrol/Diesel/Both/None)
     - Queue length (vehicles)
     - Available (Yes/No)
+  - **Station card → map interaction (NEW)**:
+    - Clicking any existing station card smoothly animates the map to that station using `map.flyTo()`
+    - Automatically opens the matching marker popup using `marker.openPopup()`
+    - Temporarily highlights the selected marker for quick visual confirmation
+    - Implementation detail:
+      - Station cards include `data-station-id` (and optional `data-lat` / `data-lng`) attributes
+      - Markers are stored in a stationId → marker lookup (`userMarkersByStationId` / `userMarkers`) to open the correct popup
   - Map container: 400px height, responsive design
 
 - **Owner Dashboard Map** (`frontend/owner-dashboard.html`):

@@ -246,6 +246,17 @@ body {
 .fqms-marker--limited .fqms-marker__dot { background: var(--status-limited); }
 .fqms-marker--nofuel .fqms-marker__dot { background: var(--status-nofuel); }
 
+/* Marker highlight when a station card is selected */
+.fqms-marker.is-selected .fqms-marker__dot {
+  animation: fqmsMarkerPulse 1.1s ease-in-out 2;
+}
+
+@keyframes fqmsMarkerPulse {
+  0% { transform: scale(1); box-shadow: 0 8px 18px rgba(17, 24, 39, 0.22); }
+  45% { transform: scale(1.25); box-shadow: 0 0 0 10px rgba(20, 255, 236, 0.18), 0 8px 18px rgba(17, 24, 39, 0.22); }
+  100% { transform: scale(1); box-shadow: 0 8px 18px rgba(17, 24, 39, 0.22); }
+}
+
 /* Leaflet popup tweaks */
 .fqms-popup__title {
   font-weight: 900;
@@ -283,7 +294,7 @@ body {
 .results-meta { color: var(--muted); }
 
 /* Card wrapper (not an anchor — details use the Details button) */
-.station-link { color: inherit; display: block; height: 100%; cursor: default; }
+.station-link { color: inherit; display: block; height: 100%; cursor: pointer; }
 
 .station-card {
   height: 100%;

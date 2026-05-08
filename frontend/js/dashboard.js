@@ -2,6 +2,10 @@
  * Customer dashboard: loads station cards from PHP + MySQL via stations.php.
  */
 
+// Version stamp to verify the correct file is running in the browser console.
+// Check: window.__FQMS_DASHBOARD_JS_VERSION
+window.__FQMS_DASHBOARD_JS_VERSION = "2026-05-08-1";
+
 /** Demo fallback if API is unreachable (offline dev only). */
 const FALLBACK_STATIONS = [
   {
@@ -23,6 +27,9 @@ const state = { query: "", filter: "all", stations: [], loadError: null };
 let userMap = null;
 let userMarkersLayer = null;
 let userMarkerIcons = null;
+let userMarkersByStationId = new Map();
+let userMarkers = Object.create(null); // stationId -> marker (plain object)
+let selectedMarkerStationId = null;
 
 function isValidLatLng(lat, lng) {
   const a = Number(lat);
@@ -99,6 +106,9 @@ function initUserMap() {
 function addMarkersFromState() {
   if (!userMap || !userMarkersLayer) return;
   userMarkersLayer.clearLayers();
+  userMarkersByStationId = new Map();
+  userMarkers = Object.create(null);
+  selectedMarkerStationId = null;
   const icons = getMarkerIcons();
   const points = [];
 
@@ -129,6 +139,8 @@ function addMarkersFromState() {
       marker.bindPopup(popupHtml);
       marker.addTo(userMarkersLayer);
       points.push([Number(lat), Number(lng)]);
+      userMarkersByStationId.set(Number(s.station_id), marker);
+      userMarkers[String(Number(s.station_id))] = marker;
     } catch (err) {
       // ignore invalid coords / leaflet issues per-station
     }
@@ -142,6 +154,90 @@ function addMarkersFromState() {
       const bounds = L.latLngBounds(points);
       userMap.fitBounds(bounds.pad(0.2), { animate: false });
     }
+  } catch (_) {}
+}
+
+function setSelectedMarker(stationId) {
+  try {
+    if (selectedMarkerStationId != null) {
+      const prev = userMarkersByStationId.get(Number(selectedMarkerStationId));
+      const prevEl = prev?.getElement?.();
+      prevEl?.classList?.remove("is-selected");
+    }
+  } catch (_) {}
+
+  selectedMarkerStationId = stationId;
+  try {
+    const m = userMarkersByStationId.get(Number(stationId));
+    const el = m?.getElement?.();
+    el?.classList?.add("is-selected");
+  } catch (_) {}
+}
+
+function buildPopupHtmlForStation(s) {
+  return [
+    `<div class="fqms-popup">`,
+    `<div class="fqms-popup__title">${escapeHtml(s.station_name)}</div>`,
+    s.location ? `<div class="fqms-popup__meta"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(s.location)}</div>` : ``,
+    `<div class="fqms-popup__row"><strong>Fuel</strong>: ${escapeHtml(getFuelText(s))}</div>`,
+    `<div class="fqms-popup__row"><strong>Queue</strong>: ${Number(s.queue_length ?? 0)} Vehicles</div>`,
+    `<div class="fqms-popup__row"><strong>Available</strong>: ${escapeHtml(getAvailabilityText(s))}</div>`,
+    `</div>`,
+  ].join("");
+}
+
+function focusStationOnMap(stationId, opts = {}) {
+  const id = Number(stationId);
+  if (!Number.isFinite(id)) return;
+
+  const station = state.stations.find((x) => Number(x.station_id) === id);
+  if (!station) return;
+
+  // Prefer explicit coords from clicked element if provided, fallback to station data.
+  const lat = opts?.lat != null && opts.lat !== "" ? opts.lat : (station.latitude ?? null);
+  const lng = opts?.lng != null && opts.lng !== "" ? opts.lng : (station.longitude ?? null);
+  if (lat === null || lng === null) return;
+  if (!isValidLatLng(lat, lng)) return;
+
+  initUserMap();
+  if (!userMap) return;
+
+  const marker = userMarkersByStationId.get(id) || userMarkers[String(id)] || null;
+
+  // Smoothly scroll attention to the map (especially on mobile).
+  try {
+    document.getElementById("mapUser")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (_) {}
+
+  if (marker) {
+    setSelectedMarker(id);
+  }
+
+  // Fly to station and open popup after animation settles.
+  try {
+    userMap.flyTo([Number(lat), Number(lng)], 15, { animate: true, duration: 0.9 });
+  } catch (_) {
+    try {
+      userMap.setView([Number(lat), Number(lng)], 15, { animate: true });
+    } catch (_) {}
+  }
+
+  try {
+    setTimeout(() => {
+      try {
+        if (marker) {
+          marker.openPopup();
+        } else if (typeof L !== "undefined") {
+          // If no marker exists (e.g., station has coords but marker wasn't created),
+          // still show an info popup at the location so the click visibly works.
+          const html = buildPopupHtmlForStation(station);
+          L.popup({ closeButton: true, autoPan: true })
+            .setLatLng([Number(lat), Number(lng)])
+            .setContent(html)
+            .openOn(userMap);
+        }
+      } catch (_) {}
+    }, 950);
   } catch (_) {}
 }
 
@@ -227,11 +323,13 @@ function stationCardHTML(station) {
   const last = formatLastUpdated(station.last_updated_iso);
   const id = station.station_id;
   const waitStatus = getWaitTimeStatus(station.waiting_time);
+  const lat = station.latitude ?? "";
+  const lng = station.longitude ?? "";
   
   return `
     <div class="col-12 col-lg-6">
-      <div class="station-link" data-station-id="${id}">
-        <div class="station-card">
+      <div class="station-link js-station-card" data-station-id="${id}" data-lat="${lat}" data-lng="${lng}">
+        <div class="station-card js-station-card" data-station-id="${id}" data-lat="${lat}" data-lng="${lng}">
           <div class="station-top">
             <div>
               <h3 class="station-name">${station.station_name}</h3>
@@ -533,6 +631,38 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.addEventListener("click", () => setActiveFilter(btn.getAttribute("data-filter")));
+  });
+
+  // Card -> map interaction (Google Maps-style focus on marker)
+  // Delegated: cards are injected dynamically, so bind once at document level.
+  // Enable debug logs by running in browser console: localStorage.setItem("fqmsDebug","1")
+  const debugClicks = localStorage.getItem("fqmsDebug") === "1";
+  document.addEventListener("click", (e) => {
+    // Don't hijack clicks on buttons inside the card (Details / Update Queue).
+    if (e.target?.closest?.("[data-open]")) return;
+    if (e.target?.closest?.("[data-update-queue]")) return;
+
+    const cardEl = e.target?.closest?.("[data-station-id]");
+    if (!cardEl) return;
+
+    // Only handle clicks that occur within the station grid or suggestion container (if present).
+    const inStations = Boolean(cardEl.closest?.("#stationsGrid"));
+    const inSuggestions = Boolean(cardEl.closest?.("#stationSearchSuggestions"));
+    if (!inStations && !inSuggestions) return;
+
+    const id = Number(cardEl.getAttribute("data-station-id"));
+    if (!Number.isFinite(id)) return;
+
+    const lat = cardEl.getAttribute("data-lat");
+    const lng = cardEl.getAttribute("data-lng");
+
+    if (debugClicks) {
+      console.log("Card clicked", id);
+      console.log("Marker found", userMarkersByStationId.get(id) || userMarkers[String(id)] || null);
+      console.log("Card coords", { lat, lng });
+    }
+
+    focusStationOnMap(id, { lat, lng });
   });
 
   // Queue Update Modal Event Listeners
