@@ -33,10 +33,14 @@ Fuel shortages and long queues make real-time visibility valuable. This project 
 - **Secure Sessions**: PHP session management with client-side credential persistence.
 
 ### Customer Dashboard
-- **Real-Time Station Data**: View all stations with current petrol/diesel availability, queue lengths, and computed status (Available / Limited / No Fuel).
+- **Live Station Data (Lightweight Polling)**: View all stations with current petrol/diesel availability, queue lengths, and computed status (Available / Limited / No Fuel).
 - **Smart Estimated Wait Times**: Instantly see how long the wait will be based on queue lengths.
 - **Search & Filter**: Easily find nearby or specific stations.
 - **Interactive Map**: View all fuel stations on an interactive Leaflet map with OpenStreetMap tiles.
+- **Auto Refresh (No Page Reload)**: Dashboard auto-refreshes station/queue/fuel data every ~7 seconds using `setInterval()` + the existing `backend/stations.php` endpoint (no WebSockets).
+- **Diff-based UI Updates**: Only station cards that changed are patched in the DOM (queue length, waiting time, fuel flags, status badge, last-updated text) to avoid flicker and heavy re-rendering.
+- **Animated Changes**: Subtle fade/pulse animations for updated cards and queue changes, smooth number transitions, and smooth badge color transitions.
+- **Resilient Error Handling**: If a refresh fails, the UI keeps the old data visible and shows a small warning toast; updates retry automatically on the next polling tick.
 
 ### Owner Dashboard
 - **Station Management**: Owners manage the station linked to their account.
@@ -574,6 +578,13 @@ mysql -u root -p fqms < database/admin_schema_update.sql
 - ✅ Auto-calculate waiting_time in update_queue.php
 - ✅ Enhanced UI with better queue display cards and status badges (Quick / Normal / Long)
 - ✅ Improved responsive design for mobile/tablet
+
+### Live Updates (v2.2 - Lightweight Real-Time Feel)
+- ✅ Auto-refresh station/queue/fuel data with polling (no page reload, no WebSockets)
+- ✅ Prevent duplicate intervals and prevent overlapping refresh calls (single in-flight fetch)
+- ✅ Update only changed station cards to minimize DOM work and avoid UI flicker
+- ✅ Last-updated indicator on the dashboard header meta (relative time)
+- ✅ Non-blocking loading indicator during refresh + warning toast on refresh errors
 
 For more details, see [WAITING_TIME_LOGIC.md](docs/WAITING_TIME_LOGIC.md) and [QUICK_START.md](docs/QUICK_START.md).
 

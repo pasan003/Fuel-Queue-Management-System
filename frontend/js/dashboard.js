@@ -4,7 +4,7 @@
 
 // Version stamp to verify the correct file is running in the browser console.
 // Check: window.__FQMS_DASHBOARD_JS_VERSION
-window.__FQMS_DASHBOARD_JS_VERSION = "2026-05-08-1";
+window.__FQMS_DASHBOARD_JS_VERSION = "2026-05-11-1";
 
 /** Demo fallback if API is unreachable (offline dev only). */
 const FALLBACK_STATIONS = [
@@ -22,6 +22,14 @@ const FALLBACK_STATIONS = [
 ];
 
 const state = { query: "", filter: "all", stations: [], loadError: null };
+
+// Lightweight polling (no websockets). Interval-safe + non-overlapping fetches.
+let refreshIntervalId = null;
+let refreshInFlight = false;
+let lastSuccessfulRefreshAt = 0;
+let lastRefreshErrorAt = 0;
+let lastRenderedStationIdsKey = "";
+let toastTimerId = null;
 
 // Leaflet map references for user dashboard
 let userMap = null;
@@ -319,6 +327,273 @@ function formatLastUpdated(iso) {
   return diffD === 1 ? "Yesterday" : `${diffD} days ago`;
 }
 
+function formatRelativeFromTimestamp(ts) {
+  if (!ts) return "—";
+  const diffMs = Date.now() - ts;
+  if (!Number.isFinite(diffMs) || diffMs < 0) return "—";
+  const s = Math.floor(diffMs / 1000);
+  if (s < 5) return "just now";
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m === 1) return "1 min ago";
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h === 1) return "1 hour ago";
+  if (h < 24) return `${h} hours ago`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? "yesterday" : `${d} days ago`;
+}
+
+function stationIdsKeyFromStations(list) {
+  return (list || [])
+    .map((s) => String(Number(s.station_id)))
+    .sort()
+    .join(",");
+}
+
+function setMetaRefreshUi({ refreshing }) {
+  const resultsMeta = document.getElementById("resultsMeta");
+  if (!resultsMeta) return;
+  resultsMeta.classList.toggle("fqms-meta--refreshing", Boolean(refreshing));
+}
+
+function updateMetaLastUpdated() {
+  const resultsMeta = document.getElementById("resultsMeta");
+  if (!resultsMeta) return;
+
+  // Preserve existing base meta text, then append a compact "Last updated" tail.
+  const base = resultsMeta.getAttribute("data-base-meta") || resultsMeta.textContent || "";
+  const tail = lastSuccessfulRefreshAt
+    ? ` • Last updated: ${formatRelativeFromTimestamp(lastSuccessfulRefreshAt)}`
+    : "";
+  resultsMeta.textContent = `${base}${tail}`;
+}
+
+function setBaseMetaText(text) {
+  const resultsMeta = document.getElementById("resultsMeta");
+  if (!resultsMeta) return;
+  resultsMeta.setAttribute("data-base-meta", text);
+  resultsMeta.textContent = text;
+  updateMetaLastUpdated();
+}
+
+function ensureToastContainer() {
+  let el = document.getElementById("fqmsToast");
+  if (el) return el;
+  el = document.createElement("div");
+  el.id = "fqmsToast";
+  el.className = "fqms-toast";
+  el.setAttribute("role", "status");
+  el.setAttribute("aria-live", "polite");
+  el.setAttribute("aria-atomic", "true");
+  document.body.appendChild(el);
+  return el;
+}
+
+function showToast(message, variant = "warn", ms = 3200) {
+  const el = ensureToastContainer();
+  if (!el) return;
+  el.classList.remove("is-show", "is-warn", "is-ok");
+  el.classList.add("is-show", variant === "ok" ? "is-ok" : "is-warn");
+  el.textContent = message;
+  if (toastTimerId) window.clearTimeout(toastTimerId);
+  toastTimerId = window.setTimeout(() => {
+    try {
+      el.classList.remove("is-show");
+    } catch (_) {}
+  }, ms);
+}
+
+function animateNumber(el, nextValue, opts = {}) {
+  if (!el) return;
+  const duration = Math.max(120, Math.min(650, Number(opts.duration || 380)));
+  const prev = Number(el.getAttribute("data-num") ?? el.textContent);
+  const from = Number.isFinite(prev) ? prev : 0;
+  const to = Number(nextValue);
+  if (!Number.isFinite(to) || to === from) {
+    el.textContent = String(nextValue);
+    el.setAttribute("data-num", String(to));
+    return;
+  }
+
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const v = Math.round(from + (to - from) * eased);
+    el.textContent = String(v);
+    el.setAttribute("data-num", String(v));
+    if (t < 1) requestAnimationFrame(tick);
+    else {
+      el.textContent = String(to);
+      el.setAttribute("data-num", String(to));
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+function setWaitBadge(containerEl, waitingTime) {
+  if (!containerEl) return;
+  const wait = Number(waitingTime) || 0;
+  const waitStatus = getWaitTimeStatus(wait);
+  const existing = containerEl.querySelector(".wait-status-badge");
+
+  if (wait <= 0) {
+    if (existing) existing.remove();
+    return;
+  }
+
+  if (!existing) {
+    const badge = document.createElement("div");
+    badge.className = `wait-status-badge ${waitStatus.status}`;
+    badge.innerHTML = `<i class="fa-solid ${waitStatus.icon}"></i>${waitStatus.label}`;
+    containerEl.appendChild(badge);
+    return;
+  }
+
+  existing.className = `wait-status-badge ${waitStatus.status}`;
+  const iconEl = existing.querySelector("i");
+  if (iconEl) iconEl.className = `fa-solid ${waitStatus.icon}`;
+  // keep text node simple
+  existing.childNodes.forEach((n) => {
+    if (n.nodeType === Node.TEXT_NODE) n.textContent = waitStatus.label;
+  });
+  if (!existing.textContent?.includes(waitStatus.label)) {
+    existing.textContent = "";
+    existing.innerHTML = `<i class="fa-solid ${waitStatus.icon}"></i>${waitStatus.label}`;
+  }
+}
+
+function updateYesNoChip(containerEl, value) {
+  if (!containerEl) return;
+  const html = yesNoChip(Boolean(value));
+  if (containerEl.innerHTML !== html) containerEl.innerHTML = html;
+}
+
+function patchStationCard(cardRoot, prevStation, nextStation) {
+  if (!cardRoot) return false;
+  const card = cardRoot.classList.contains("station-card")
+    ? cardRoot
+    : cardRoot.querySelector(".station-card") || cardRoot;
+
+  let changed = false;
+  const prevStatus = String(prevStation?.status || "");
+  const nextStatus = String(nextStation?.status || "");
+  const prevQueue = Number(prevStation?.queue_length ?? 0);
+  const nextQueue = Number(nextStation?.queue_length ?? 0);
+  const prevWait = Number(prevStation?.waiting_time ?? 0);
+  const nextWait = Number(nextStation?.waiting_time ?? 0);
+
+  // Status pill update (color transitions handled by CSS)
+  if (prevStatus !== nextStatus) {
+    const pill = card.querySelector(".status-pill");
+    if (pill) {
+      pill.classList.remove("status-available", "status-limited", "status-nofuel");
+      pill.classList.add(statusClass(nextStatus));
+      const iconEl = pill.querySelector("i");
+      if (iconEl) iconEl.className = `fa-solid ${statusIcon(nextStatus)}`;
+      // update text content after icon
+      const txt = statusLabel(nextStatus);
+      if (!pill.textContent.includes(txt)) {
+        pill.childNodes.forEach((n) => {
+          if (n.nodeType === Node.TEXT_NODE) n.textContent = ` ${txt}`;
+        });
+        if (!pill.textContent.includes(txt)) {
+          pill.innerHTML = `<i class="fa-solid ${statusIcon(nextStatus)}"></i>${txt}`;
+        }
+      }
+    }
+    changed = true;
+  }
+
+  // Fuel chips (Petrol / Diesel)
+  if (Boolean(prevStation?.petrol) !== Boolean(nextStation?.petrol)) {
+    updateYesNoChip(card.querySelector(".meta:nth-child(1) .v"), nextStation.petrol);
+    changed = true;
+  }
+  if (Boolean(prevStation?.diesel) !== Boolean(nextStation?.diesel)) {
+    updateYesNoChip(card.querySelector(".meta:nth-child(2) .v"), nextStation.diesel);
+    changed = true;
+  }
+
+  // Queue length (pulse/glow when it changes)
+  if (prevQueue !== nextQueue) {
+    const qEl = card.querySelector(".queue-length-value");
+    animateNumber(qEl, nextQueue, { duration: 420 });
+    card.classList.remove("fqms-queue-changed");
+    // force reflow so animation can retrigger
+    void card.offsetWidth;
+    card.classList.add("fqms-queue-changed");
+    changed = true;
+  }
+
+  // Waiting time number + badge
+  if (prevWait !== nextWait) {
+    const wEl = card.querySelector(".waiting-time-value");
+    animateNumber(wEl, nextWait, { duration: 420 });
+    setWaitBadge(card.querySelector(".meta.waiting-time-metric"), nextWait);
+    changed = true;
+  }
+
+  // Last updated text inside card
+  const prevIso = String(prevStation?.last_updated_iso || "");
+  const nextIso = String(nextStation?.last_updated_iso || "");
+  if (prevIso !== nextIso) {
+    const span = card.querySelector(".last-updated span");
+    if (span) span.textContent = formatLastUpdated(nextStation.last_updated_iso);
+    changed = true;
+  }
+
+  // Update stored coords on the clickable wrapper (used by card->map)
+  const nextLat = nextStation.latitude ?? "";
+  const nextLng = nextStation.longitude ?? "";
+  if (String(prevStation?.latitude ?? "") !== String(nextLat) || String(prevStation?.longitude ?? "") !== String(nextLng)) {
+    try {
+      cardRoot.setAttribute("data-lat", String(nextLat));
+      cardRoot.setAttribute("data-lng", String(nextLng));
+      card.setAttribute("data-lat", String(nextLat));
+      card.setAttribute("data-lng", String(nextLng));
+    } catch (_) {}
+  }
+
+  if (changed) {
+    card.classList.remove("fqms-card-updated");
+    void card.offsetWidth;
+    card.classList.add("fqms-card-updated");
+  }
+  return changed;
+}
+
+function patchVisibleStationCards(prevStationsById, nextStationsById) {
+  const grid = document.getElementById("stationsGrid");
+  if (!grid) return { patched: 0, reRendered: false };
+
+  const filtered = applyFilters();
+  const nextKey = stationIdsKeyFromStations(filtered);
+
+  // If the visible set changed (new/removed due to data changes), do a regular render.
+  // This avoids complicated DOM diff logic while still preventing flicker in the common case.
+  if (lastRenderedStationIdsKey && lastRenderedStationIdsKey !== nextKey) {
+    render();
+    lastRenderedStationIdsKey = nextKey;
+    return { patched: 0, reRendered: true };
+  }
+
+  let patched = 0;
+  filtered.forEach((s) => {
+    const id = Number(s.station_id);
+    const cardEl = grid.querySelector(`[data-station-id="${id}"]`);
+    if (!cardEl) return;
+    const prev = prevStationsById.get(id) || null;
+    const next = nextStationsById.get(id) || null;
+    if (!next) return;
+    if (patchStationCard(cardEl, prev, next)) patched += 1;
+  });
+
+  lastRenderedStationIdsKey = nextKey;
+  return { patched, reRendered: false };
+}
+
 function stationCardHTML(station) {
   const last = formatLastUpdated(station.last_updated_iso);
   const id = station.station_id;
@@ -550,13 +825,16 @@ function render() {
   if (state.loadError) {
     meta += ` • ${state.loadError}`;
   }
-  resultsMeta.textContent = meta;
+  setBaseMetaText(meta);
 
   emptyWrap.classList.toggle("d-none", filtered.length !== 0);
   wireOpenButtons(grid);
   wireUpdateQueueButtons(grid);
   // update markers on the map to match filtered stations
   try { addMarkersFromState(); } catch (e) { /* ignore if map not initialized */ }
+
+  // Track current visible set to enable targeted refresh patching.
+  lastRenderedStationIdsKey = stationIdsKeyFromStations(filtered);
 }
 
 function setActiveFilter(filter) {
@@ -590,6 +868,75 @@ async function loadStationsFromApi() {
     initUserMap();
     addMarkersFromState();
   }
+}
+
+async function refreshStationsQuietly() {
+  if (refreshInFlight) return;
+  refreshInFlight = true;
+  setMetaRefreshUi({ refreshing: true });
+  document.body.classList.add("fqms-is-refreshing");
+
+  // Keep old data visible; only patch on success.
+  const prevStations = Array.isArray(state.stations) ? state.stations : [];
+  const prevById = new Map(prevStations.map((s) => [Number(s.station_id), s]));
+
+  try {
+    const data = await apiGet("../backend/stations.php");
+    if (!data.ok || !Array.isArray(data.stations)) {
+      throw new Error(data.message || "Invalid response");
+    }
+
+    state.loadError = null;
+    state.stations = data.stations;
+    lastSuccessfulRefreshAt = Date.now();
+
+    const nextById = new Map(state.stations.map((s) => [Number(s.station_id), s]));
+    const result = patchVisibleStationCards(prevById, nextById);
+
+    // Keep map in sync. Markers depend on station status/coords, so update on refresh.
+    try { addMarkersFromState(); } catch (_) {}
+
+    updateMetaLastUpdated();
+    return result;
+  } catch (err) {
+    const now = Date.now();
+    // Avoid spamming warnings if backend is down.
+    if (now - lastRefreshErrorAt > 15000) {
+      lastRefreshErrorAt = now;
+      showToast("Live update failed. Showing last known data.", "warn");
+    }
+  } finally {
+    refreshInFlight = false;
+    setMetaRefreshUi({ refreshing: false });
+    document.body.classList.remove("fqms-is-refreshing");
+  }
+}
+
+function startAutoRefresh() {
+  // Prevent duplicates (important for bfcache / accidental double init).
+  if (refreshIntervalId != null) return;
+
+  const MIN = 5000;
+  const MAX = 10000;
+  // 7s feels "live" without spamming backend.
+  const intervalMs = 7000;
+  const safeMs = Math.max(MIN, Math.min(MAX, intervalMs));
+
+  refreshIntervalId = window.setInterval(() => {
+    refreshStationsQuietly();
+  }, safeMs);
+
+  // If the tab becomes visible again, do one immediate refresh (but still avoid overlap).
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      refreshStationsQuietly();
+    }
+  });
+
+  // Update the "Last updated" label every second for the relative time feel.
+  window.setInterval(() => {
+    updateMetaLastUpdated();
+  }, 1000);
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -700,6 +1047,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   render();
+  // Start polling only after initial render.
+  startAutoRefresh();
 });
 
 /**
