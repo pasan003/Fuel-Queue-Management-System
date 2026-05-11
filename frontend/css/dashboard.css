@@ -335,7 +335,7 @@ body {
   font-weight: 900;
   font-size: 0.88rem;
   white-space: nowrap;
-  transition: all var(--t) ease;
+  transition: background-color var(--t) ease, border-color var(--t) ease, color var(--t) ease, transform var(--t) ease, box-shadow var(--t) ease;
   cursor: pointer;
   min-height: 40px;
   justify-content: center;
@@ -703,6 +703,96 @@ body {
   font-weight: 900;
   color: var(--accent);
   line-height: 1.2;
+}
+
+/* ===== LIGHTWEIGHT LIVE UPDATE UX ===== */
+
+body.fqms-is-refreshing .results-meta {
+  opacity: 0.92;
+}
+
+.results-meta.fqms-meta--refreshing::after {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 10px;
+  border-radius: 999px;
+  border: 2px solid rgba(13, 115, 119, 0.25);
+  border-top-color: rgba(13, 115, 119, 0.85);
+  animation: fqmsSpin 0.9s linear infinite;
+  vertical-align: -2px;
+}
+
+@keyframes fqmsSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Card highlight when data changes (fade + slight lift) */
+.station-card.fqms-card-updated {
+  animation: fqmsCardUpdated 520ms ease both;
+}
+
+@keyframes fqmsCardUpdated {
+  0% { opacity: 0.72; transform: translateY(2px) scale(0.995); }
+  45% { opacity: 1; transform: translateY(-2px) scale(1.002); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Pulse/glow when queue changes */
+.station-card.fqms-queue-changed {
+  animation: fqmsQueuePulse 760ms ease both;
+}
+
+@keyframes fqmsQueuePulse {
+  0% { box-shadow: var(--shadow-sm); }
+  35% { box-shadow: 0 0 0 6px rgba(20, 255, 236, 0.16), var(--shadow-md); }
+  100% { box-shadow: var(--shadow-sm); }
+}
+
+/* Subtle badge transitions are already handled via .status-pill transition */
+
+/* Toast for refresh warnings (non-blocking) */
+.fqms-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(26, 26, 26, 0.92);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  max-width: min(520px, calc(100vw - 28px));
+  font-weight: 700;
+  font-size: 0.92rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+  z-index: 2000;
+}
+
+.fqms-toast.is-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.fqms-toast.is-warn {
+  background: rgba(245, 158, 11, 0.95);
+  color: #1A1A1A;
+}
+
+.fqms-toast.is-ok {
+  background: rgba(45, 106, 79, 0.95);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-meta.fqms-meta--refreshing::after { animation: none; }
+  .station-card.fqms-card-updated,
+  .station-card.fqms-queue-changed { animation: none; }
+  .fqms-toast { transition: none; }
 }
 
 /* Unit text styling */
