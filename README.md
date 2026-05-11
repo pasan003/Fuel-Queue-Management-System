@@ -18,6 +18,11 @@ The production-level Admin Dashboard is now fully functional!
 - **Fix Applied**: Updated admin password hash to correct bcrypt hash for `admin123`
 - **Status**: ✅ Verified working - all login tests pass
 
+**Customer Dashboard Map Persistence Fixed**: Auto refresh was resetting the Leaflet map view after users focused a station from a card click.
+- **Root Cause**: The refresh flow rebuilt markers and re-applied auto-fit logic, which overwrote the user's current center/zoom and closed the selected station popup.
+- **Fix Applied**: The map instance is initialized once; polling refresh now updates markers in-place and preserves center/zoom + selected station/popup state.
+- **Status**: ✅ Map stays focused during live polling (no view reset / no tile reload)
+
 ---
 
 ## 📖 Problem Statement

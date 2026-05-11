@@ -4,7 +4,7 @@
 
 // Version stamp to verify the correct file is running in the browser console.
 // Check: window.__FQMS_DASHBOARD_JS_VERSION
-window.__FQMS_DASHBOARD_JS_VERSION = "2026-05-11-1";
+window.__FQMS_DASHBOARD_JS_VERSION = "2026-05-11-2";
 
 /** Demo fallback if API is unreachable (offline dev only). */
 const FALLBACK_STATIONS = [
@@ -103,22 +103,35 @@ function initUserMap() {
       setTimeout(() => {
         try { userMap?.invalidateSize(); } catch (_) {}
       }, 50);
-    } else {
-      userMap.setView(defaultCenter, 7);
     }
   } catch (err) {
     console.warn('Leaflet init failed', err);
   }
 }
 
-function addMarkersFromState() {
+function addMarkersFromState(opts = {}) {
   if (!userMap || !userMarkersLayer) return;
-  userMarkersLayer.clearLayers();
-  userMarkersByStationId = new Map();
-  userMarkers = Object.create(null);
-  selectedMarkerStationId = null;
+  const preserveView = opts.preserveView !== false;
+  const autoFit = opts.autoFit === true;
+  const snapshot = preserveView
+    ? (() => {
+        try { return { center: userMap.getCenter(), zoom: userMap.getZoom() }; } catch (_) { return null; }
+      })()
+    : null;
+
+  const prevSelected = selectedMarkerStationId;
+  let wasPopupOpen = false;
+  try {
+    if (prevSelected != null) {
+      const prevMarker = userMarkersByStationId.get(Number(prevSelected)) || null;
+      wasPopupOpen = Boolean(prevMarker?.isPopupOpen?.());
+    }
+  } catch (_) {}
+
   const icons = getMarkerIcons();
   const points = [];
+  const nextMarkersByStationId = new Map();
+  const nextMarkersPlain = Object.create(null);
 
   (state.stations || []).forEach((s) => {
     const lat = s.latitude ?? null;
@@ -127,13 +140,6 @@ function addMarkersFromState() {
     if (!isValidLatLng(lat, lng)) return;
 
     try {
-      const status = String(s.status || "");
-      const icon =
-        (icons && (status === "available" || status === "limited" || status === "nofuel"))
-          ? icons[status]
-          : (icons?.fallback || undefined);
-
-      const marker = L.marker([Number(lat), Number(lng)], icon ? { icon } : undefined);
       const popupHtml = [
         `<div class="fqms-popup">`,
         `<div class="fqms-popup__title">${escapeHtml(s.station_name)}</div>`,
@@ -144,25 +150,70 @@ function addMarkersFromState() {
         `</div>`,
       ].join("");
 
-      marker.bindPopup(popupHtml);
-      marker.addTo(userMarkersLayer);
+      const id = Number(s.station_id);
+      if (!Number.isFinite(id)) return;
+
+      const status = String(s.status || "");
+      const icon =
+        (icons && (status === "available" || status === "limited" || status === "nofuel"))
+          ? icons[status]
+          : (icons?.fallback || undefined);
+
+      let marker = userMarkersByStationId.get(id) || null;
+      if (!marker) {
+        marker = L.marker([Number(lat), Number(lng)], icon ? { icon } : undefined);
+        marker.bindPopup(popupHtml);
+        marker.addTo(userMarkersLayer);
+      } else {
+        try { marker.setLatLng([Number(lat), Number(lng)]); } catch (_) {}
+        try { if (icon) marker.setIcon(icon); } catch (_) {}
+        try { marker.setPopupContent?.(popupHtml); } catch (_) {}
+        try { if (!userMarkersLayer.hasLayer(marker)) marker.addTo(userMarkersLayer); } catch (_) {}
+      }
+
       points.push([Number(lat), Number(lng)]);
-      userMarkersByStationId.set(Number(s.station_id), marker);
-      userMarkers[String(Number(s.station_id))] = marker;
+      nextMarkersByStationId.set(id, marker);
+      nextMarkersPlain[String(id)] = marker;
     } catch (err) {
       // ignore invalid coords / leaflet issues per-station
     }
   });
 
-  // Fit map view to markers when available; otherwise keep Sri Lanka default.
   try {
-    if (points.length === 1) {
-      userMap.setView(points[0], 13);
-    } else if (points.length > 1) {
-      const bounds = L.latLngBounds(points);
-      userMap.fitBounds(bounds.pad(0.2), { animate: false });
+    for (const [id, marker] of userMarkersByStationId.entries()) {
+      if (!nextMarkersByStationId.has(id)) {
+        try { userMarkersLayer.removeLayer(marker); } catch (_) {}
+      }
     }
   } catch (_) {}
+
+  userMarkersByStationId = nextMarkersByStationId;
+  userMarkers = nextMarkersPlain;
+
+  if (prevSelected != null && userMarkersByStationId.has(Number(prevSelected))) {
+    setSelectedMarker(Number(prevSelected));
+    if (wasPopupOpen) {
+      try { userMarkersByStationId.get(Number(prevSelected))?.openPopup?.(); } catch (_) {}
+    }
+  } else {
+    selectedMarkerStationId = null;
+  }
+
+  if (!preserveView && autoFit) {
+    try {
+      if (points.length === 1) {
+        userMap.setView(points[0], 13);
+      } else if (points.length > 1) {
+        const bounds = L.latLngBounds(points);
+        userMap.fitBounds(bounds.pad(0.2), { animate: false });
+      }
+    } catch (_) {}
+    return;
+  }
+
+  if (snapshot) {
+    try { userMap.setView(snapshot.center, snapshot.zoom, { animate: false }); } catch (_) {}
+  }
 }
 
 function setSelectedMarker(stationId) {
@@ -853,7 +904,7 @@ async function loadStationsFromApi() {
       state.stations = data.stations;
       // initialize map and markers after loading stations
       initUserMap();
-      addMarkersFromState();
+      addMarkersFromState({ preserveView: false, autoFit: true });
       return;
     }
     throw new Error(data.message || "Invalid response");
@@ -866,7 +917,7 @@ async function loadStationsFromApi() {
     state.stations = FALLBACK_STATIONS;
     state.loadError = "Using offline preview — connect MySQL and log in";
     initUserMap();
-    addMarkersFromState();
+    addMarkersFromState({ preserveView: false, autoFit: true });
   }
 }
 
