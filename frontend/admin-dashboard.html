@@ -37,9 +37,19 @@
 <nav class="admin-navbar">
     <div class="container-fluid">
         <div class="navbar-brand">
+            <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary sidebar-toggle" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
             <h5 class="m-0"><i class="fas fa-shield-alt"></i> Admin Dashboard</h5>
         </div>
+        <div class="global-search">
+            <i class="fas fa-search search-icon"></i>
+            <input type="search" id="globalSearchInput" class="form-control" placeholder="Search users, stations, reports..." autocomplete="off">
+            <div id="globalSearchResults" class="global-search-results" style="display:none;"></div>
+        </div>
         <div class="navbar-menu">
+            <span class="live-indicator" id="liveIndicator"><span></span> Live</span>
+            <small id="lastUpdated" class="text-muted">Last updated: --</small>
             <span id="adminName" class="navbar-text me-3"></span>
             <button id="logoutBtn" class="btn btn-sm btn-outline-danger">Logout</button>
         </div>
@@ -76,8 +86,13 @@
         <!-- Dashboard Section -->
         <section id="dashboardSection" class="content-section">
             <div class="section-header">
-                <h2>Dashboard</h2>
-                <p class="text-muted">System overview and statistics</p>
+                <div>
+                    <h2>Dashboard</h2>
+                    <p class="text-muted">System overview and statistics</p>
+                </div>
+                <button id="dashboardRefreshBtn" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
             </div>
 
             <!-- Alert Cards -->
@@ -128,17 +143,50 @@
                 <div class="col-lg-6 mb-3">
                     <div class="card">
                         <div class="card-header">
-                            <h6 class="m-0">User Distribution</h6>
+                            <h6 class="m-0">Queue Trends</h6>
                         </div>
                         <div class="card-body">
-                            <canvas id="userChart"></canvas>
+                            <canvas id="queueTrendChart"></canvas>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-6 mb-3">
                     <div class="card">
                         <div class="card-header">
-                            <h6 class="m-0">Reports Status</h6>
+                            <h6 class="m-0">Fuel Availability</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="fuelChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="m-0">Active Users</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="userChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="m-0">Peak Queue Hours</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="peakHoursChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="m-0">Reports Overview</h6>
                         </div>
                         <div class="card-body">
                             <canvas id="reportChart"></canvas>
@@ -177,6 +225,16 @@
                         </div>
                         <div class="card-body" id="fuelAvailability"></div>
                     </div>
+                </div>
+            </div>
+
+            <div class="card live-stations-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="m-0">Live Station Status</h6>
+                    <span class="badge bg-light text-dark" id="liveStationCount">0 active</span>
+                </div>
+                <div class="card-body p-0">
+                    <div id="liveStationsList" class="live-stations-list"></div>
                 </div>
             </div>
         </section>
@@ -285,6 +343,7 @@
                                 <th>Location</th>
                                 <th>Status</th>
                                 <th>Queue</th>
+                                <th>Live</th>
                                 <th>Fuel</th>
                                 <th>Actions</th>
                             </tr>
@@ -374,7 +433,7 @@
             </div>
 
             <!-- Alerts Table -->
-            <div class card">
+            <div class="card">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0" id="alertsTable">
                         <thead class="table-light">
@@ -520,6 +579,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/admin.js"></script>
 
 </body>

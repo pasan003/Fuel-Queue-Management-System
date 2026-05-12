@@ -80,13 +80,39 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $stations = $stmt->fetchAll();
 
+function admin_station_status(bool $petrol, bool $diesel, int $queueLength): string {
+    if (!$petrol && !$diesel) {
+        return 'no_fuel';
+    }
+    if ($petrol && $diesel && $queueLength < 10) {
+        return 'available';
+    }
+    return 'limited';
+}
+
+function admin_wait_badge(int $waitingTime): string {
+    if ($waitingTime <= 15) {
+        return 'quick';
+    }
+    if ($waitingTime <= 45) {
+        return 'normal';
+    }
+    return 'long';
+}
+
 $out = [];
 foreach ($stations as $s) {
+    $petrol = (bool)(int)$s['petrol_available'];
+    $diesel = (bool)(int)$s['diesel_available'];
+    $queueLength = (int)$s['queue_length'];
+    $waitingTime = (int)$s['waiting_time'];
+
     $out[] = [
         'station_id' => (int)$s['station_id'],
         'station_name' => (string)$s['station_name'],
         'location' => (string)$s['location'],
         'approval_status' => (string)$s['approval_status'],
+        'status' => admin_station_status($petrol, $diesel, $queueLength),
         'created_at' => (string)$s['created_at'],
         'approved_at' => $s['approved_at'],
         'owner' => $s['user_id'] ? [
@@ -94,11 +120,12 @@ foreach ($stations as $s) {
             'name' => (string)$s['owner_name'],
             'email' => (string)$s['owner_email'],
         ] : null,
-        'queue_length' => (int)$s['queue_length'],
-        'waiting_time' => (int)$s['waiting_time'],
+        'queue_length' => $queueLength,
+        'waiting_time' => $waitingTime,
+        'wait_badge' => admin_wait_badge($waitingTime),
         'fuel_availability' => [
-            'petrol' => (bool)(int)$s['petrol_available'],
-            'diesel' => (bool)(int)$s['diesel_available'],
+            'petrol' => $petrol,
+            'diesel' => $diesel,
         ],
     ];
 }

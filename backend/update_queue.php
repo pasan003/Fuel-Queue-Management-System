@@ -29,6 +29,12 @@ if (!$pdo) {
     json_response(503, ['ok' => false, 'message' => 'Database unavailable']);
 }
 
+function table_exists(PDO $pdo, string $table): bool {
+    $stmt = $pdo->prepare('SHOW TABLES LIKE ?');
+    $stmt->execute([$table]);
+    return (bool)$stmt->fetchColumn();
+}
+
 // Verify user is authenticated
 session_boot();
 if (empty($_SESSION['user_id'])) {
@@ -105,6 +111,13 @@ if ($method === 'POST' || $method === 'PATCH' || $method === 'PUT') {
                 'INSERT INTO queue_status (station_id, queue_length, waiting_time, updated_by, updated_at) VALUES (?, ?, ?, ?, NOW())'
             );
             $insStmt->execute([$stationId, $queueLength, $waitingTime, $uid]);
+        }
+
+        if (table_exists($pdo, 'queue_history')) {
+            $historyStmt = $pdo->prepare(
+                'INSERT INTO queue_history (station_id, queue_length, waiting_time, updated_by) VALUES (?, ?, ?, ?)'
+            );
+            $historyStmt->execute([$stationId, $queueLength, $waitingTime, $uid]);
         }
 
         // Fetch and return updated queue status

@@ -21,6 +21,20 @@ VALUES
   ('Ceypetco — Trincomalee', 'Trincomalee', 8.58740000, 81.21520000),
   ('IOC — Matara', 'Matara', 5.95490000, 80.55490000);
 
+UPDATE fuel_stations
+SET approval_status = 'approved',
+    approved_at = COALESCE(approved_at, CURRENT_TIMESTAMP)
+WHERE station_name IN (
+  'Ceypetco â€” Colombo',
+  'IOC â€” Kandy',
+  'Ceypetco â€” Galle',
+  'IOC â€” Jaffna',
+  'Ceypetco â€” Kurunegala',
+  'IOC â€” Anuradhapura',
+  'Ceypetco â€” Trincomalee',
+  'IOC â€” Matara'
+);
+
 -- ---------------------------------------------------------------------------
 -- 2) Ensure queue_status exists for each station (1 row per station)
 -- ---------------------------------------------------------------------------
