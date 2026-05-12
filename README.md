@@ -60,6 +60,10 @@ Fuel shortages and long queues make real-time visibility valuable. This project 
 - **System Alerts**: Monitor system alerts and notifications.
 - **Audit Logs**: Complete audit trail of all admin actions.
 - **Data Export**: Export users, stations, and reports to CSV.
+- **Live Admin Updates**: The admin dashboard polls lightweight endpoints every 15 seconds to refresh stats, reports, alerts, queues, and active station status without a page reload.
+- **Advanced Analytics**: Chart.js visualizes queue trends, fuel availability, active users by role, peak queue hours, and report status breakdowns from real database aggregates.
+- **Global Search**: One debounced admin search bar finds matching users, stations, and reports with categorized results.
+- **Responsive Admin UI**: Mobile-friendly sidebar, touch-sized actions, responsive tables, live update highlights, and reusable chart instances reduce layout friction and flicker.
 
 ### Estimated Waiting Time Logic
 - **Simple Formula**: `Estimated Waiting Time = Queue Length × 2 minutes`
@@ -300,11 +304,15 @@ The Admin Dashboard is a comprehensive management system for system administrato
 
 #### 1. Dashboard & Statistics
 - **System Overview**: Total users, stations, reports, and active queues
-- **Real-time Charts**: User distribution by role, report status breakdown
+- **Live Auto Refresh**: Dashboard sections poll every 15 seconds without a full page reload and preserve active filters/sidebar state
+- **Live Station Status**: Queue length, waiting time, fuel availability, station status, and wait badges update in place with subtle highlights
+- **Real-time Charts**: Queue trends, fuel availability, active users by role, peak queue hours, and report status breakdown
 - **Station Approval Status**: Pending, approved, and rejected stations
 - **Fuel Availability Trends**: Percentage of stations with fuel available by type
 - **System Alerts**: Critical, high, medium, and low severity alerts
 - **Recent Activity**: New users, stations, reports, and admin actions (last 24h)
+- **Global Search**: Debounced search bar for users, stations, and reports with categorized results
+- **Mobile UI**: Collapsible sidebar, responsive tables/cards, touch-friendly controls, and responsive Chart.js canvases
 
 #### 2. User Management
 **Features**:
@@ -422,6 +430,9 @@ All endpoints require admin authentication and return JSON.
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `admin/statistics.php` | GET | Dashboard statistics (users, stations, reports, alerts, fuel availability) |
+| `admin/live-stats.php` | GET | Lightweight live dashboard snapshot for polling (summary, badges, active station queue/status data) |
+| `admin/analytics.php` | GET | Chart.js analytics aggregates (queue trends, fuel availability, users, peak hours, reports) |
+| `admin/search.php` | GET | Debounced global search across users, stations, and reports |
 | `admin/alerts.php` | GET | List system alerts (page, limit, acknowledged filter) |
 | `admin/alert-actions.php` | POST | Acknowledge/delete alerts |
 | `admin/audit-logs.php` | GET | View admin action logs (page, limit, action, user filters) |
@@ -513,6 +524,8 @@ mysql -u root -p fqms < database/admin_schema_update.sql
 - `audit_logs`: Track all admin actions
 - `admin_alerts`: System alerts and notifications
 - `system_settings`: Admin configuration
+- `queue_history`: Historical queue snapshots recorded when queue length changes; powers trend and peak-hour analytics
+- `statistics_cache`: Optional short-lived JSON cache table reserved for heavier dashboard aggregates
 
 **Modified Tables**:
 - `users`: Added `is_active`, `suspension_reason`, `suspended_at`, `suspended_by`

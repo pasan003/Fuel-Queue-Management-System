@@ -571,3 +571,365 @@ canvas {
     background-color: #f8d7da;
     color: #721c24;
 }
+
+/* Live dashboard, analytics, search, and mobile upgrades */
+.admin-navbar .container-fluid {
+    gap: 1rem;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: max-content;
+}
+
+.sidebar-toggle {
+    display: none;
+}
+
+.navbar-menu {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.global-search {
+    position: relative;
+    flex: 1;
+    max-width: 520px;
+    min-width: 240px;
+}
+
+.global-search .form-control {
+    padding-left: 2.25rem;
+}
+
+.search-icon {
+    position: absolute;
+    top: 50%;
+    left: 0.8rem;
+    transform: translateY(-50%);
+    color: #7b8494;
+    z-index: 2;
+}
+
+.global-search-results {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #dfe3ea;
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+    max-height: 70vh;
+    overflow-y: auto;
+    z-index: 1100;
+}
+
+.search-results-section {
+    padding: 0.75rem;
+    border-bottom: 1px solid #eef0f3;
+}
+
+.search-results-section:last-child {
+    border-bottom: 0;
+}
+
+.search-results-title {
+    color: #6c757d;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+}
+
+.search-result-item {
+    display: block;
+    padding: 0.65rem 0.7rem;
+    color: #1a1d23;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.search-result-item:hover {
+    background: #f3f7ff;
+}
+
+.search-result-item strong,
+.search-result-item small {
+    display: block;
+}
+
+.search-empty,
+.search-loading {
+    padding: 1rem;
+    color: #6c757d;
+    text-align: center;
+}
+
+.live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: #e8f7ef;
+    color: #146c43;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.live-indicator span {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #28a745;
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.55);
+    animation: livePulse 1.8s infinite;
+}
+
+.live-indicator.refreshing span {
+    animation-duration: 0.7s;
+}
+
+@keyframes livePulse {
+    70% {
+        box-shadow: 0 0 0 8px rgba(40, 167, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+.admin-sidebar {
+    transition: transform 0.25s ease;
+}
+
+.section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.stat-card.stat-updated,
+.stat-row.stat-updated,
+.live-station-item.stat-updated,
+tr.stat-updated {
+    animation: updateFlash 1.2s ease;
+}
+
+@keyframes updateFlash {
+    0% {
+        background-color: #fff7d6;
+    }
+    100% {
+        background-color: inherit;
+    }
+}
+
+.card-body canvas {
+    min-height: 240px;
+}
+
+.fuel-badge.no-fuel,
+.status-no_fuel,
+.status-no-fuel {
+    background-color: #dc3545;
+    color: white;
+}
+
+.status-available {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-limited {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.wait-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.wait-quick {
+    background: #d4edda;
+    color: #155724;
+}
+
+.wait-normal {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.wait-long {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.live-stations-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.live-station-item {
+    padding: 1rem;
+    border-right: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.live-station-item h6 {
+    margin: 0 0 0.3rem;
+    font-weight: 700;
+}
+
+.live-station-meta {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.live-station-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.toast-container-admin {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1200;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.admin-toast {
+    background: #1a1d23;
+    color: white;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.2s ease;
+}
+
+@media (max-width: 992px) {
+    .admin-navbar .container-fluid {
+        align-items: stretch;
+        flex-wrap: wrap;
+    }
+
+    .global-search {
+        order: 3;
+        max-width: none;
+        width: 100%;
+    }
+
+    .navbar-menu {
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar-toggle {
+        display: inline-flex;
+    }
+
+    .admin-sidebar {
+        position: fixed;
+        top: 66px;
+        left: 0;
+        width: min(82vw, 290px);
+        height: calc(100vh - 66px);
+        z-index: 999;
+        transform: translateX(-100%);
+    }
+
+    .admin-sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-menu {
+        flex-direction: column;
+        flex-wrap: nowrap;
+    }
+
+    .menu-item {
+        min-width: 0;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .stat-card {
+        flex-direction: row;
+        text-align: left;
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .section-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .navbar-menu {
+        width: 100%;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .global-search {
+        min-width: 100%;
+    }
+
+    .table-responsive {
+        border: 0;
+    }
+
+    .table-responsive table,
+    .table-responsive thead,
+    .table-responsive tbody,
+    .table-responsive th,
+    .table-responsive td,
+    .table-responsive tr {
+        display: block;
+    }
+
+    .table-responsive thead {
+        display: none;
+    }
+
+    .table-responsive tr {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin: 0.75rem;
+        overflow: hidden;
+        background: white;
+    }
+
+    .table-responsive td {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+        text-align: right;
+    }
+
+    .table-responsive td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #6c757d;
+        text-align: left;
+    }
+
+    .table-responsive td:last-child {
+        border-bottom: 0;
+    }
+}

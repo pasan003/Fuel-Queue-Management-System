@@ -1,4 +1,4 @@
--- Fuel Queue Management System — MySQL schema (aligned with PHP app, Apr 2026)
+-- Fuel Queue Management System â€” MySQL schema (aligned with PHP app, Apr 2026)
 -- Import into phpMyAdmin or: mysql -u root -p < database/fqms.sql
 -- Database: create manually as `fqms` or uncomment below:
 
@@ -13,6 +13,11 @@ SET time_zone = "+00:00";
 -- ---------------------------------------------------------------------------
 DROP TABLE IF EXISTS `reports`;
 DROP TABLE IF EXISTS `notifications`;
+DROP TABLE IF EXISTS `system_settings`;
+DROP TABLE IF EXISTS `statistics_cache`;
+DROP TABLE IF EXISTS `admin_alerts`;
+DROP TABLE IF EXISTS `audit_logs`;
+DROP TABLE IF EXISTS `queue_history`;
 DROP TABLE IF EXISTS `queue_status`;
 DROP TABLE IF EXISTS `fuel_availability`;
 DROP TABLE IF EXISTS `fuel_stations`;
@@ -39,8 +44,63 @@ CREATE TABLE `users` (
   CONSTRAINT `fk_user_suspended_by` FOREIGN KEY (`suspended_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `audit_logs` (
+  `log_id` int NOT NULL AUTO_INCREMENT,
+  `admin_user_id` int DEFAULT NULL,
+  `action_type` varchar(80) NOT NULL,
+  `entity_type` varchar(50) NOT NULL,
+  `entity_id` int DEFAULT NULL,
+  `description` text,
+  `old_value` json DEFAULT NULL,
+  `new_value` json DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`log_id`),
+  KEY `idx_admin_action` (`admin_user_id`, `action_type`),
+  KEY `idx_audit_created` (`created_at`),
+  CONSTRAINT `fk_audit_admin` FOREIGN KEY (`admin_user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `admin_alerts` (
+  `alert_id` int NOT NULL AUTO_INCREMENT,
+  `alert_type` varchar(80) NOT NULL,
+  `severity` enum('critical','high','medium','low') NOT NULL DEFAULT 'medium',
+  `title` varchar(150) NOT NULL,
+  `message` text NOT NULL,
+  `entity_type` varchar(50) DEFAULT NULL,
+  `entity_id` int DEFAULT NULL,
+  `is_acknowledged` tinyint(1) NOT NULL DEFAULT '0',
+  `acknowledged_by` int DEFAULT NULL,
+  `acknowledged_at` timestamp NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`alert_id`),
+  KEY `idx_alert_status` (`is_acknowledged`, `severity`, `created_at`),
+  KEY `idx_alert_ack_by` (`acknowledged_by`),
+  CONSTRAINT `fk_alert_ack_by` FOREIGN KEY (`acknowledged_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `statistics_cache` (
+  `cache_key` varchar(80) NOT NULL,
+  `cache_value` json NOT NULL,
+  `expires_at` timestamp NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`cache_key`),
+  KEY `idx_statistics_cache_expires` (`expires_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `system_settings` (
+  `setting_key` varchar(80) NOT NULL,
+  `setting_value` text,
+  `updated_by` int DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`setting_key`),
+  KEY `idx_system_settings_updated_by` (`updated_by`),
+  CONSTRAINT `fk_system_settings_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ---------------------------------------------------------------------------
--- Fuel types (Petrol = 1, Diesel = 2) — fixed seed IDs used by the app
+-- Fuel types (Petrol = 1, Diesel = 2) â€” fixed seed IDs used by the app
 -- ---------------------------------------------------------------------------
 CREATE TABLE `fuel_types` (
   `fuel_type_id` int NOT NULL AUTO_INCREMENT,
@@ -62,10 +122,17 @@ CREATE TABLE `fuel_stations` (
   `location` varchar(255) DEFAULT NULL,
   `latitude` decimal(10,8) DEFAULT NULL,
   `longitude` decimal(11,8) DEFAULT NULL,
+  `approval_status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  `rejection_reason` varchar(255) DEFAULT NULL,
+  `approved_by` int DEFAULT NULL,
+  `approved_at` timestamp NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`station_id`),
   KEY `idx_owner` (`owner_user_id`),
-  CONSTRAINT `fk_station_owner` FOREIGN KEY (`owner_user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+  KEY `idx_station_approval` (`approval_status`),
+  KEY `idx_station_approved_by` (`approved_by`),
+  CONSTRAINT `fk_station_owner` FOREIGN KEY (`owner_user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_station_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- One availability row per (station, fuel type)
@@ -101,6 +168,20 @@ CREATE TABLE `queue_status` (
   CONSTRAINT `fk_queue_user` FOREIGN KEY (`updated_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `queue_history` (
+  `history_id` int NOT NULL AUTO_INCREMENT,
+  `station_id` int NOT NULL,
+  `queue_length` int NOT NULL DEFAULT '0',
+  `waiting_time` int NOT NULL DEFAULT '0',
+  `updated_by` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`history_id`),
+  KEY `idx_queue_history_station_time` (`station_id`, `created_at`),
+  KEY `idx_queue_history_time` (`created_at`),
+  CONSTRAINT `fk_queue_history_station` FOREIGN KEY (`station_id`) REFERENCES `fuel_stations` (`station_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_queue_history_user` FOREIGN KEY (`updated_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `notifications` (
   `notification_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int DEFAULT NULL,
@@ -121,21 +202,28 @@ CREATE TABLE `reports` (
   `fuel_type_id` int DEFAULT NULL,
   `comment` text,
   `image_path` varchar(255) DEFAULT NULL,
+  `report_status` enum('pending','reviewed','resolved','spam') NOT NULL DEFAULT 'pending',
+  `admin_notes` text DEFAULT NULL,
+  `reviewed_by` int DEFAULT NULL,
+  `reviewed_at` timestamp NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`report_id`),
   KEY `user_id` (`user_id`),
   KEY `station_id` (`station_id`),
   KEY `fuel_type_id` (`fuel_type_id`),
+  KEY `idx_report_status` (`report_status`, `created_at`),
+  KEY `idx_report_reviewed_by` (`reviewed_by`),
   CONSTRAINT `fk_rep_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_rep_station` FOREIGN KEY (`station_id`) REFERENCES `fuel_stations` (`station_id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_rep_fuel` FOREIGN KEY (`fuel_type_id`) REFERENCES `fuel_types` (`fuel_type_id`) ON DELETE SET NULL
+  CONSTRAINT `fk_rep_fuel` FOREIGN KEY (`fuel_type_id`) REFERENCES `fuel_types` (`fuel_type_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_rep_reviewed_by` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
--- Demo station (no owner) — queue + availability for user dashboard smoke test
+-- Demo station (no owner) â€” queue + availability for user dashboard smoke test
 -- ---------------------------------------------------------------------------
-INSERT INTO `fuel_stations` (`station_id`, `owner_user_id`, `station_name`, `location`, `latitude`, `longitude`, `created_at`) VALUES
-(1, NULL, 'Ceypetco — Colombo', 'Colombo', 6.92710000, 79.86120000, CURRENT_TIMESTAMP);
+INSERT INTO `fuel_stations` (`station_id`, `owner_user_id`, `station_name`, `location`, `latitude`, `longitude`, `approval_status`, `approved_at`, `created_at`) VALUES
+(1, NULL, 'Ceypetco - Colombo', 'Colombo', 6.92710000, 79.86120000, 'approved', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO `fuel_availability` (`station_id`, `fuel_type_id`, `is_available`, `last_updated`) VALUES
 (1, 1, 1, CURRENT_TIMESTAMP),
