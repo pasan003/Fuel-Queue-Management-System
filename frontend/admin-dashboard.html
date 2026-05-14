@@ -7,7 +7,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -19,7 +19,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 
     <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/admin-modern.css">
 
     <script>
         // Protect admin dashboard: redirect non-admin users
@@ -28,374 +28,597 @@
             if (userType !== 'admin') {
                 window.location.href = 'login.html';
             }
+            // Load saved theme preference
+            const theme = localStorage.getItem('adminTheme') || 'light';
+            document.documentElement.setAttribute('data-admin-theme', theme);
         })();
     </script>
 </head>
 <body class="admin-body">
 
-<!-- Navigation -->
-<nav class="admin-navbar">
-    <div class="container-fluid">
-        <div class="navbar-brand">
-            <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary sidebar-toggle" aria-label="Toggle navigation">
+<!-- Top Navbar -->
+<nav class="admin-navbar" role="navigation" aria-label="Main navigation">
+    <div class="navbar-container">
+        <!-- Left Section: Logo & Sidebar Toggle -->
+        <div class="navbar-left">
+            <button id="sidebarToggle" class="navbar-toggle" aria-label="Toggle sidebar" aria-expanded="false">
                 <i class="fas fa-bars"></i>
             </button>
-            <h5 class="m-0"><i class="fas fa-shield-alt"></i> Admin Dashboard</h5>
+            <div class="navbar-brand">
+                <i class="fas fa-chart-pie"></i>
+                <span>FQMS Admin</span>
+            </div>
         </div>
-        <div class="global-search">
-            <i class="fas fa-search search-icon"></i>
-            <input type="search" id="globalSearchInput" class="form-control" placeholder="Search users, stations, reports..." autocomplete="off">
-            <div id="globalSearchResults" class="global-search-results" style="display:none;"></div>
+
+        <!-- Center: Global Search -->
+        <div class="navbar-center">
+            <div class="global-search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="search" id="globalSearchInput" class="global-search-input" placeholder="Search users, stations, reports..." autocomplete="off" aria-label="Global search">
+                <div id="globalSearchResults" class="global-search-dropdown" style="display:none;"></div>
+            </div>
         </div>
-        <div class="navbar-menu">
-            <span class="live-indicator" id="liveIndicator"><span></span> Live</span>
-            <small id="lastUpdated" class="text-muted">Last updated: --</small>
-            <span id="adminName" class="navbar-text me-3"></span>
-            <button id="logoutBtn" class="btn btn-sm btn-outline-danger">Logout</button>
+
+        <!-- Right Section: Status, Theme, User Menu -->
+        <div class="navbar-right">
+            <div class="status-indicator" id="liveIndicator" title="Live updates status">
+                <span class="pulse"></span>
+                <span class="status-text">Live</span>
+            </div>
+            <div class="last-update" id="lastUpdated">Last sync: --</div>
+            <button id="themToggle" class="theme-toggle" aria-label="Toggle theme" title="Toggle dark/light mode">
+                <i class="fas fa-moon"></i>
+            </button>
+            <div class="navbar-user">
+                <div class="user-info">
+                    <span id="adminName" class="user-name"></span>
+                </div>
+            </div>
+            <button id="logoutBtn" class="btn-logout" title="Logout">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
     </div>
 </nav>
 
-<!-- Sidebar Navigation -->
-<div class="admin-container">
-    <aside class="admin-sidebar">
-        <div class="sidebar-menu">
-            <a href="#" class="menu-item active" data-section="dashboard">
-                <i class="fas fa-chart-line"></i> Dashboard
-            </a>
-            <a href="#" class="menu-item" data-section="users">
-                <i class="fas fa-users"></i> Users <span class="badge bg-primary" id="usersBadge" style="display:none;"></span>
-            </a>
-            <a href="#" class="menu-item" data-section="stations">
-                <i class="fas fa-gas-pump"></i> Stations <span class="badge bg-warning" id="stationsBadge" style="display:none;"></span>
-            </a>
-            <a href="#" class="menu-item" data-section="reports">
-                <i class="fas fa-flag"></i> Reports <span class="badge bg-danger" id="reportsBadge" style="display:none;"></span>
-            </a>
-            <a href="#" class="menu-item" data-section="alerts">
-                <i class="fas fa-bell"></i> Alerts <span class="badge bg-danger" id="alertsBadge" style="display:none;"></span>
-            </a>
-            <a href="#" class="menu-item" data-section="audit">
-                <i class="fas fa-history"></i> Audit Logs
-            </a>
+<!-- Main Layout -->
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" role="navigation" aria-label="Sidebar navigation">
+        <div class="sidebar-header">
+            <h6>Navigation</h6>
         </div>
+        <nav class="sidebar-menu">
+            <a href="#" class="menu-item active" data-section="dashboard" role="tab" aria-selected="true">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+                <span class="icon-chevron"><i class="fas fa-chevron-right"></i></span>
+            </a>
+            <a href="#" class="menu-item" data-section="users" role="tab" aria-selected="false">
+                <i class="fas fa-users"></i>
+                <span>Users</span>
+                <span class="badge-notification" id="usersBadge" style="display:none;"></span>
+            </a>
+            <a href="#" class="menu-item" data-section="stations" role="tab" aria-selected="false">
+                <i class="fas fa-gas-pump"></i>
+                <span>Stations</span>
+                <span class="badge-notification" id="stationsBadge" style="display:none;"></span>
+            </a>
+            <a href="#" class="menu-item" data-section="reports" role="tab" aria-selected="false">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>Reports</span>
+                <span class="badge-notification" id="reportsBadge" style="display:none;"></span>
+            </a>
+            <a href="#" class="menu-item" data-section="alerts" role="tab" aria-selected="false">
+                <i class="fas fa-bell"></i>
+                <span>Alerts</span>
+                <span class="badge-notification" id="alertsBadge" style="display:none;"></span>
+            </a>
+            <a href="#" class="menu-item" data-section="audit" role="tab" aria-selected="false">
+                <i class="fas fa-history"></i>
+                <span>Audit Logs</span>
+            </a>
+        </nav>
     </aside>
 
     <!-- Main Content -->
-    <main class="admin-main">
+    <main class="admin-main" role="main">
         <!-- Dashboard Section -->
-        <section id="dashboardSection" class="content-section">
+        <section id="dashboardSection" class="content-section active">
             <div class="section-header">
-                <div>
-                    <h2>Dashboard</h2>
-                    <p class="text-muted">System overview and statistics</p>
-                </div>
-                <button id="dashboardRefreshBtn" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-            </div>
-
-            <!-- Alert Cards -->
-            <div id="alertsContainer" class="alert-cards mb-4" style="display:none;"></div>
-
-            <!-- Stats Grid -->
-            <div class="row mb-4" id="statsGrid">
-                <div class="col-md-3 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-users"></i></div>
-                        <div class="stat-content">
-                            <p class="stat-label">Total Users</p>
-                            <h3 id="statTotalUsers">0</h3>
-                        </div>
+                <div class="header-top">
+                    <div>
+                        <h1>Dashboard</h1>
+                        <p class="subtitle">System overview and real-time monitoring</p>
                     </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-gas-pump"></i></div>
-                        <div class="stat-content">
-                            <p class="stat-label">Stations</p>
-                            <h3 id="statTotalStations">0</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-flag"></i></div>
-                        <div class="stat-content">
-                            <p class="stat-label">Reports</p>
-                            <h3 id="statTotalReports">0</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-traffic-light"></i></div>
-                        <div class="stat-content">
-                            <p class="stat-label">Active Queues</p>
-                            <h3 id="statActiveQueues">0</h3>
-                        </div>
-                    </div>
+                    <button id="dashboardRefreshBtn" class="btn-refresh" title="Refresh dashboard">
+                        <i class="fas fa-sync-alt"></i> <span>Refresh</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Charts Row -->
-            <div class="row mb-4">
-                <div class="col-lg-6 mb-3">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="m-0">Queue Trends</h6>
+            <!-- Critical Alerts -->
+            <div id="alertsContainer" class="critical-alerts" style="display:none;"></div>
+
+            <!-- Hero Statistics Grid -->
+            <div class="hero-stats-grid">
+                <div class="stat-card" id="stat-active-stations" data-stat="stations">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper stations">
+                            <i class="fas fa-gas-pump"></i>
                         </div>
-                        <div class="card-body">
+                        <button class="stat-menu" aria-label="Options">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <div class="stat-body">
+                        <p class="stat-label">Active Stations</p>
+                        <div class="stat-value-wrapper">
+                            <h2 class="stat-value" id="statActiveStations">0</h2>
+                            <span class="stat-trend trend-up" id="statStationsTrend">
+                                <i class="fas fa-arrow-up"></i> <span>+0%</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <small class="text-muted"><i class="fas fa-circle" style="color: #10b981; font-size: 0.4rem;"></i> Approved & Live</small>
+                    </div>
+                </div>
+
+                <div class="stat-card" id="stat-active-queues" data-stat="queues">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper queues">
+                            <i class="fas fa-traffic-light"></i>
+                        </div>
+                        <button class="stat-menu" aria-label="Options">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <div class="stat-body">
+                        <p class="stat-label">Active Queues</p>
+                        <div class="stat-value-wrapper">
+                            <h2 class="stat-value" id="statActiveQueues">0</h2>
+                            <span class="stat-trend trend-up" id="statQueuesTrend">
+                                <i class="fas fa-arrow-up"></i> <span>+0%</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <small class="text-muted"><i class="fas fa-circle" style="color: #f59e0b; font-size: 0.4rem;"></i> Stations with queues</small>
+                    </div>
+                </div>
+
+                <div class="stat-card" id="stat-fuel-alerts" data-stat="fuel-alerts">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper alerts">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <button class="stat-menu" aria-label="Options">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <div class="stat-body">
+                        <p class="stat-label">Fuel Alerts</p>
+                        <div class="stat-value-wrapper">
+                            <h2 class="stat-value" id="statFuelAlerts">0</h2>
+                            <span class="stat-trend trend-down" id="statFuelAlertsTrend">
+                                <i class="fas fa-arrow-down"></i> <span>-0%</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <small class="text-muted"><i class="fas fa-circle" style="color: #ef4444; font-size: 0.4rem;"></i> No fuel stations</small>
+                    </div>
+                </div>
+
+                <div class="stat-card" id="stat-pending-reports" data-stat="reports">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper reports">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <button class="stat-menu" aria-label="Options">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <div class="stat-body">
+                        <p class="stat-label">Pending Reports</p>
+                        <div class="stat-value-wrapper">
+                            <h2 class="stat-value" id="statPendingReports">0</h2>
+                            <span class="stat-trend trend-neutral" id="statReportsTrend">
+                                <i class="fas fa-minus"></i> <span>0%</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <small class="text-muted"><i class="fas fa-circle" style="color: #8b5cf6; font-size: 0.4rem;"></i> Awaiting review</small>
+                    </div>
+                </div>
+
+                <div class="stat-card" id="stat-active-users" data-stat="users">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper users">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <button class="stat-menu" aria-label="Options">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <div class="stat-body">
+                        <p class="stat-label">Active Users</p>
+                        <div class="stat-value-wrapper">
+                            <h2 class="stat-value" id="statActiveUsers">0</h2>
+                            <span class="stat-trend trend-up" id="statUsersTrend">
+                                <i class="fas fa-arrow-up"></i> <span>+0%</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <small class="text-muted"><i class="fas fa-circle" style="color: #06b6d4; font-size: 0.4rem;"></i> Not suspended</small>
+                    </div>
+                </div>
+
+                <div class="stat-card" id="stat-avg-wait-time" data-stat="wait-time">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper wait-time">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <button class="stat-menu" aria-label="Options">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <div class="stat-body">
+                        <p class="stat-label">Avg Wait Time</p>
+                        <div class="stat-value-wrapper">
+                            <h2 class="stat-value" id="statAvgWaitTime">0<span style="font-size: 0.6em; font-weight: 500;">m</span></h2>
+                            <span class="stat-trend trend-down" id="statWaitTimeTrend">
+                                <i class="fas fa-arrow-down"></i> <span>-0%</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <small class="text-muted"><i class="fas fa-circle" style="color: #14b8a6; font-size: 0.4rem;"></i> Across all stations</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Monitoring & Analytics Row -->
+            <div class="dashboard-row">
+                <!-- Live Queue Activity & Alerts Panel -->
+                <div class="dashboard-panel live-monitoring-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h3>Live Activity</h3>
+                            <p class="panel-subtitle">Real-time system updates</p>
+                        </div>
+                        <div class="panel-controls">
+                            <span class="live-badge"><span class="pulse-dot"></span>Live</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabs: Queue Activity vs Alerts -->
+                    <div class="panel-tabs">
+                        <button class="tab-btn active" data-tab="queue-activity">
+                            <i class="fas fa-chart-line"></i> Queue Activity
+                        </button>
+                        <button class="tab-btn" data-tab="alerts-activity">
+                            <i class="fas fa-bell"></i> Alerts & Issues
+                        </button>
+                    </div>
+
+                    <!-- Queue Activity Feed -->
+                    <div class="tab-content active" id="tab-queue-activity">
+                        <div id="queueActivityFeed" class="activity-feed">
+                            <div class="activity-empty">
+                                <i class="fas fa-inbox"></i>
+                                <p>No recent queue activity</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alerts Activity Feed -->
+                    <div class="tab-content" id="tab-alerts-activity">
+                        <div id="alertsActivityFeed" class="activity-feed">
+                            <div class="activity-empty">
+                                <i class="fas fa-bell"></i>
+                                <p>No recent alerts</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Charts Panel -->
+                <div class="dashboard-panel analytics-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h3>Analytics</h3>
+                            <p class="panel-subtitle">System trends and insights</p>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-container small">
+                            <div class="chart-header">
+                                <h6>Queue Trends</h6>
+                            </div>
                             <canvas id="queueTrendChart"></canvas>
                         </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 mb-3">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="m-0">Fuel Availability</h6>
-                        </div>
-                        <div class="card-body">
+                        <div class="chart-container small">
+                            <div class="chart-header">
+                                <h6>Fuel Availability</h6>
+                            </div>
                             <canvas id="fuelChart"></canvas>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="row mb-4">
-                <div class="col-lg-4 mb-3">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="m-0">Active Users</h6>
-                        </div>
-                        <div class="card-body">
+                    <div class="charts-grid">
+                        <div class="chart-container small">
+                            <div class="chart-header">
+                                <h6>Users by Role</h6>
+                            </div>
                             <canvas id="userChart"></canvas>
                         </div>
-                    </div>
-                </div>
-                <div class="col-lg-4 mb-3">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="m-0">Peak Queue Hours</h6>
-                        </div>
-                        <div class="card-body">
+                        <div class="chart-container small">
+                            <div class="chart-header">
+                                <h6>Peak Queue Hours</h6>
+                            </div>
                             <canvas id="peakHoursChart"></canvas>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-4 mb-3">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="m-0">Reports Overview</h6>
-                        </div>
-                        <div class="card-body">
+
+                    <div class="charts-grid">
+                        <div class="chart-container small">
+                            <div class="chart-header">
+                                <h6>Reports Overview</h6>
+                            </div>
                             <canvas id="reportChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Recent Activity -->
-            <div class="row">
-                <div class="col-lg-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="m-0">Station Approval Status</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="stat-row">
+            <!-- Quick Stats & Status Row -->
+            <div class="dashboard-row">
+                <!-- Station Approval Status -->
+                <div class="dashboard-panel quick-status-panel">
+                    <div class="panel-header">
+                        <h3>Station Approvals</h3>
+                    </div>
+                    <div class="status-list">
+                        <div class="status-item">
+                            <div class="status-label">
+                                <i class="fas fa-hourglass-start"></i>
                                 <span>Pending</span>
+                            </div>
+                            <div class="status-value">
                                 <strong id="stationPending">0</strong>
+                                <span class="status-unit">awaiting</span>
                             </div>
-                            <div class="stat-row">
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">
+                                <i class="fas fa-check-circle"></i>
                                 <span>Approved</span>
-                                <strong id="stationApproved">0</strong>
                             </div>
-                            <div class="stat-row">
+                            <div class="status-value">
+                                <strong id="stationApproved">0</strong>
+                                <span class="status-unit">live</span>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">
+                                <i class="fas fa-times-circle"></i>
                                 <span>Rejected</span>
+                            </div>
+                            <div class="status-value">
                                 <strong id="stationRejected">0</strong>
+                                <span class="status-unit">rejected</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="m-0">Fuel Availability</h6>
+
+                <!-- Fuel Availability Status -->
+                <div class="dashboard-panel quick-status-panel">
+                    <div class="panel-header">
+                        <h3>Fuel Status</h3>
+                    </div>
+                    <div id="fuelAvailability" class="fuel-status-list">
+                        <div class="fuel-empty">
+                            <p>Loading fuel data...</p>
                         </div>
-                        <div class="card-body" id="fuelAvailability"></div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="dashboard-panel quick-actions-panel">
+                    <div class="panel-header">
+                        <h3>Quick Actions</h3>
+                    </div>
+                    <div class="quick-actions-grid">
+                        <button class="quick-action-btn" data-action="approve-stations" title="Review pending station approvals">
+                            <i class="fas fa-check"></i>
+                            <span>Approve<br>Stations</span>
+                        </button>
+                        <button class="quick-action-btn" data-action="review-reports" title="Review pending reports">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Review<br>Reports</span>
+                        </button>
+                        <button class="quick-action-btn" data-action="view-alerts" title="View system alerts">
+                            <i class="fas fa-exclamation"></i>
+                            <span>View<br>Alerts</span>
+                        </button>
+                        <button class="quick-action-btn" data-action="export-data" title="Export system data">
+                            <i class="fas fa-download"></i>
+                            <span>Export<br>Data</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div class="card live-stations-card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="m-0">Live Station Status</h6>
-                    <span class="badge bg-light text-dark" id="liveStationCount">0 active</span>
+            <!-- Live Stations Table -->
+            <div class="dashboard-panel full-width">
+                <div class="panel-header">
+                    <div>
+                        <h3>Live Stations</h3>
+                        <p class="panel-subtitle">Active stations with current queue status</p>
+                    </div>
+                    <span class="live-count" id="liveStationCount">0 stations</span>
                 </div>
-                <div class="card-body p-0">
-                    <div id="liveStationsList" class="live-stations-list"></div>
+                <div class="table-container">
+                    <div id="liveStationsList" class="live-stations-grid">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No active stations</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Users Section -->
-        <section id="usersSection" class="content-section" style="display:none;">
+        <section id="usersSection" class="content-section">
             <div class="section-header">
-                <h2>User Management</h2>
-                <p class="text-muted">Manage system users and permissions</p>
-            </div>
-
-            <!-- Search & Filter -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <input type="text" id="userSearch" class="form-control" placeholder="Search by name, email...">
-                        </div>
-                        <div class="col-md-3">
-                            <select id="userRoleFilter" class="form-select">
-                                <option value="">All Roles</option>
-                                <option value="customer">Customer</option>
-                                <option value="owner">Station Owner</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <select id="userStatusFilter" class="form-select">
-                                <option value="">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="suspended">Suspended</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button id="userRefreshBtn" class="btn btn-primary w-100">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                        </div>
-                    </div>
+                <div>
+                    <h1>User Management</h1>
+                    <p class="subtitle">Manage system users and permissions</p>
                 </div>
             </div>
 
-            <!-- Users Table -->
-            <div class="card">
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h3>Users</h3>
+                </div>
+
+                <!-- Search & Filter -->
+                <div class="filters-bar">
+                    <input type="text" id="userSearch" class="filter-input" placeholder="Search by name, email...">
+                    <select id="userRoleFilter" class="filter-select">
+                        <option value="">All Roles</option>
+                        <option value="customer">Customer</option>
+                        <option value="owner">Station Owner</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <select id="userStatusFilter" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                    <button id="userRefreshBtn" class="btn-action">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <!-- Users Table -->
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0" id="usersTable">
-                        <thead class="table-light">
+                    <table class="admin-table" id="usersTable">
+                        <thead>
                             <tr>
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Status</th>
-                                <th>Stations</th>
                                 <th>Joined</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="usersTableBody"></tbody>
+                        <tbody id="usersTableBody">
+                            <tr class="loading-row">
+                                <td colspan="6">Loading users...</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
-                <div class="card-footer text-muted">
-                    <div id="usersPagination"></div>
-                </div>
+                <div class="pagination-container" id="usersPagination"></div>
             </div>
         </section>
 
         <!-- Stations Section -->
-        <section id="stationsSection" class="content-section" style="display:none;">
+        <section id="stationsSection" class="content-section">
             <div class="section-header">
-                <h2>Station Management</h2>
-                <p class="text-muted">Approve and manage fuel stations</p>
-            </div>
-
-            <!-- Search & Filter -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-5">
-                            <input type="text" id="stationSearch" class="form-control" placeholder="Search by name, location...">
-                        </div>
-                        <div class="col-md-3">
-                            <select id="stationStatusFilter" class="form-select">
-                                <option value="">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button id="stationRefreshBtn" class="btn btn-primary w-100">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                        </div>
-                    </div>
+                <div>
+                    <h1>Station Management</h1>
+                    <p class="subtitle">Approve and manage fuel stations</p>
                 </div>
             </div>
 
-            <!-- Stations Table -->
-            <div class="card">
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h3>Stations</h3>
+                </div>
+
+                <!-- Search & Filter -->
+                <div class="filters-bar">
+                    <input type="text" id="stationSearch" class="filter-input" placeholder="Search by name, location...">
+                    <select id="stationStatusFilter" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <button id="stationRefreshBtn" class="btn-action">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <!-- Stations Table -->
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0" id="stationsTable">
-                        <thead class="table-light">
+                    <table class="admin-table" id="stationsTable">
+                        <thead>
                             <tr>
                                 <th>Station Name</th>
                                 <th>Owner</th>
                                 <th>Location</th>
                                 <th>Status</th>
                                 <th>Queue</th>
-                                <th>Live</th>
                                 <th>Fuel</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="stationsTableBody"></tbody>
+                        <tbody id="stationsTableBody">
+                            <tr class="loading-row">
+                                <td colspan="7">Loading stations...</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
-                <div class="card-footer text-muted">
-                    <div id="stationsPagination"></div>
-                </div>
+                <div class="pagination-container" id="stationsPagination"></div>
             </div>
         </section>
 
         <!-- Reports Section -->
-        <section id="reportsSection" class="content-section" style="display:none;">
+        <section id="reportsSection" class="content-section">
             <div class="section-header">
-                <h2>Reports Moderation</h2>
-                <p class="text-muted">Review and manage user-submitted reports</p>
-            </div>
-
-            <!-- Search & Filter -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <input type="text" id="reportSearch" class="form-control" placeholder="Search reports...">
-                        </div>
-                        <div class="col-md-3">
-                            <select id="reportStatusFilter" class="form-select">
-                                <option value="">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="reviewed">Reviewed</option>
-                                <option value="resolved">Resolved</option>
-                                <option value="spam">Spam</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button id="reportRefreshBtn" class="btn btn-primary w-100">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                        </div>
-                    </div>
+                <div>
+                    <h1>Reports Moderation</h1>
+                    <p class="subtitle">Review and manage user-submitted reports</p>
                 </div>
             </div>
 
-            <!-- Reports Table -->
-            <div class="card">
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h3>Reports</h3>
+                </div>
+
+                <!-- Search & Filter -->
+                <div class="filters-bar">
+                    <input type="text" id="reportSearch" class="filter-input" placeholder="Search reports...">
+                    <select id="reportStatusFilter" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="reviewed">Reviewed</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="spam">Spam</option>
+                    </select>
+                    <button id="reportRefreshBtn" class="btn-action">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <!-- Reports Table -->
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0" id="reportsTable">
-                        <thead class="table-light">
+                    <table class="admin-table" id="reportsTable">
+                        <thead>
                             <tr>
-                                <th>ID</th>
                                 <th>Reporter</th>
                                 <th>Station</th>
                                 <th>Comment</th>
@@ -404,39 +627,45 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="reportsTableBody"></tbody>
+                        <tbody id="reportsTableBody">
+                            <tr class="loading-row">
+                                <td colspan="6">Loading reports...</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
-                <div class="card-footer text-muted">
-                    <div id="reportsPagination"></div>
-                </div>
+                <div class="pagination-container" id="reportsPagination"></div>
             </div>
         </section>
 
         <!-- Alerts Section -->
-        <section id="alertsSection" class="content-section" style="display:none;">
+        <section id="alertsSection" class="content-section">
             <div class="section-header">
-                <h2>System Alerts</h2>
-                <p class="text-muted">Suspicious activity and system notifications</p>
-            </div>
-
-            <!-- Alerts Actions -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <button id="acknowledgeAllBtn" class="btn btn-sm btn-outline-success">
-                        <i class="fas fa-check-circle"></i> Acknowledge All
-                    </button>
-                    <button id="alertRefreshBtn" class="btn btn-sm btn-outline-primary ms-2">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
+                <div>
+                    <h1>System Alerts</h1>
+                    <p class="subtitle">Suspicious activity and system notifications</p>
                 </div>
             </div>
 
-            <!-- Alerts Table -->
-            <div class="card">
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>Alerts</h3>
+                    </div>
+                    <div>
+                        <button id="acknowledgeAllBtn" class="btn-action">
+                            <i class="fas fa-check-circle"></i> Acknowledge All
+                        </button>
+                        <button id="alertRefreshBtn" class="btn-action ms-2">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Alerts Table -->
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0" id="alertsTable">
-                        <thead class="table-light">
+                    <table class="admin-table" id="alertsTable">
+                        <thead>
                             <tr>
                                 <th>Severity</th>
                                 <th>Title</th>
@@ -446,56 +675,55 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="alertsTableBody"></tbody>
+                        <tbody id="alertsTableBody">
+                            <tr class="loading-row">
+                                <td colspan="6">Loading alerts...</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
+                <div class="pagination-container" id="alertsPagination"></div>
             </div>
         </section>
 
         <!-- Audit Logs Section -->
-        <section id="auditSection" class="content-section" style="display:none;">
+        <section id="auditSection" class="content-section">
             <div class="section-header">
-                <h2>Audit Logs</h2>
-                <p class="text-muted">Admin action history and system changes</p>
-            </div>
-
-            <!-- Export & Filter -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <input type="text" id="auditSearch" class="form-control" placeholder="Search actions...">
-                        </div>
-                        <div class="col-md-3">
-                            <select id="auditActionFilter" class="form-select">
-                                <option value="">All Actions</option>
-                                <option value="user_suspended">User Suspended</option>
-                                <option value="user_activated">User Activated</option>
-                                <option value="user_deleted">User Deleted</option>
-                                <option value="station_approved">Station Approved</option>
-                                <option value="station_rejected">Station Rejected</option>
-                                <option value="report_reviewed">Report Reviewed</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button id="auditRefreshBtn" class="btn btn-primary w-100">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button id="exportUsersBtn" class="btn btn-outline-success btn-sm w-100">
-                                <i class="fas fa-download"></i> Export Users
-                            </button>
-                        </div>
-                    </div>
+                <div>
+                    <h1>Audit Logs</h1>
+                    <p class="subtitle">Admin action history and system changes</p>
                 </div>
             </div>
 
-            <!-- Audit Logs Table -->
-            <div class="card">
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h3>Audit Logs</h3>
+                </div>
+
+                <!-- Search & Filter & Export -->
+                <div class="filters-bar">
+                    <input type="text" id="auditSearch" class="filter-input" placeholder="Search actions...">
+                    <select id="auditActionFilter" class="filter-select">
+                        <option value="">All Actions</option>
+                        <option value="user_suspended">User Suspended</option>
+                        <option value="user_activated">User Activated</option>
+                        <option value="user_deleted">User Deleted</option>
+                        <option value="station_approved">Station Approved</option>
+                        <option value="station_rejected">Station Rejected</option>
+                        <option value="report_reviewed">Report Reviewed</option>
+                    </select>
+                    <button id="exportUsersBtn" class="btn-action">
+                        <i class="fas fa-download"></i> Export Users
+                    </button>
+                    <button id="auditRefreshBtn" class="btn-action">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <!-- Audit Table -->
                 <div class="table-responsive">
-                    <table class="table table-sm table-hover mb-0" id="auditTable">
-                        <thead class="table-light">
+                    <table class="admin-table" id="auditTable">
+                        <thead>
                             <tr>
                                 <th>Admin</th>
                                 <th>Action</th>
@@ -505,12 +733,14 @@
                                 <th>Timestamp</th>
                             </tr>
                         </thead>
-                        <tbody id="auditTableBody"></tbody>
+                        <tbody id="auditTableBody">
+                            <tr class="loading-row">
+                                <td colspan="6">Loading audit logs...</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
-                <div class="card-footer text-muted">
-                    <div id="auditPagination"></div>
-                </div>
+                <div class="pagination-container" id="auditPagination"></div>
             </div>
         </section>
     </main>
@@ -519,12 +749,12 @@
 <!-- Modals -->
 
 <!-- User Action Modal -->
-<div class="modal fade" id="userActionModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="userActionModal" tabindex="-1" role="dialog" aria-labelledby="userActionTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="userActionTitle">User Action</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p id="userActionMessage"></p>
@@ -539,12 +769,12 @@
 </div>
 
 <!-- Station Action Modal -->
-<div class="modal fade" id="stationActionModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="stationActionModal" tabindex="-1" role="dialog" aria-labelledby="stationActionTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="stationActionTitle">Station Action</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p id="stationActionMessage"></p>
@@ -559,12 +789,12 @@
 </div>
 
 <!-- Report Action Modal -->
-<div class="modal fade" id="reportActionModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="reportActionModal" tabindex="-1" role="dialog" aria-labelledby="reportActionTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="reportActionTitle">Review Report</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div id="reportDetails"></div>
@@ -580,7 +810,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/admin.js"></script>
+<script src="js/admin-modern.js"></script>
 
 </body>
 </html>

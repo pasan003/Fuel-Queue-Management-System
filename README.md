@@ -23,6 +23,19 @@ The production-level Admin Dashboard is now fully functional!
 - **Fix Applied**: The map instance is initialized once; polling refresh now updates markers in-place and preserves center/zoom + selected station/popup state.
 - **Status**: ✅ Map stays focused during live polling (no view reset / no tile reload)
 
+**Admin Dashboard Data Not Displaying (Users, Stations, Reports, Alerts, Audit Logs) - FIXED**:
+- **Root Cause #1**: API response structure mismatch. Backend returns `{"users": [...], "pagination": {...}}` but frontend was accessing `result.data?.rows`
+  - **Fix**: Updated all 5 data loading functions in `admin-modern.js` to use correct response keys:
+    - `loadUsers()`: Changed to `result.users` 
+    - `loadStations()`: Changed to `result.stations`
+    - `loadReports()`: Changed to `result.reports`
+    - `loadAlerts()`: Changed to `result.alerts`
+    - `loadAuditLogs()`: Changed to `result.logs`
+  - All pagination calls updated to use `result.pagination?.total_pages`
+- **Root Cause #2**: CSS display rules being overridden. Sections had `.active` class but inline `style="display:none"` had higher specificity
+  - **Fix**: Removed inline styles from HTML sections and added `!important` to CSS rules in `admin-modern.css`
+- **Status**: ✅ All sections now display correctly with full data (Users: 3 users, Stations: 9 stations, Reports/Alerts/Audit: empty states working)
+
 ---
 
 ## 📖 Problem Statement
@@ -54,16 +67,43 @@ Fuel shortages and long queues make real-time visibility valuable. This project 
 - **Station Map**: View your station's location on an interactive map.
 
 ### Admin Dashboard
-- **User Management**: Manage users (suspend, activate, delete).
-- **Station Approval**: Review and approve pending fuel station registrations.
-- **Reports Moderation**: Moderate user-submitted reports and spam detection.
-- **System Alerts**: Monitor system alerts and notifications.
-- **Audit Logs**: Complete audit trail of all admin actions.
-- **Data Export**: Export users, stations, and reports to CSV.
-- **Live Admin Updates**: The admin dashboard polls lightweight endpoints every 15 seconds to refresh stats, reports, alerts, queues, and active station status without a page reload.
-- **Advanced Analytics**: Chart.js visualizes queue trends, fuel availability, active users by role, peak queue hours, and report status breakdowns from real database aggregates.
-- **Global Search**: One debounced admin search bar finds matching users, stations, and reports with categorized results.
-- **Responsive Admin UI**: Mobile-friendly sidebar, touch-sized actions, responsive tables, live update highlights, and reusable chart instances reduce layout friction and flicker.
+- **Professional SaaS Design**: Modern, professional monitoring center with smooth animations and professional styling inspired by Linear, Vercel, and Stripe dashboards.
+- **Hero Statistics Section**: 6 animated stat cards showing:
+  - Active Stations (with trend indicators)
+  - Active Queues (real-time queue count)
+  - Fuel Alerts (no-fuel stations)
+  - Pending Reports (awaiting review)
+  - Active Users (not suspended)
+  - Avg Wait Time (system-wide average)
+- **Live Activity Monitoring**: 
+  - Real-time queue activity feed with timestamps
+  - Recent alerts and suspicious activity panel
+  - Live station status grid with queue details and fuel availability
+  - Auto-refreshing every 15 seconds without page reload
+- **Advanced Analytics Center**:
+  - Queue trends chart (avg queue + wait time over time)
+  - Fuel availability visualization (available vs unavailable stations)
+  - User distribution by role (customers, owners, admins)
+  - Peak queue hours heatmap
+  - Report status breakdown
+  - All charts are smooth, responsive, and avoid flicker on updates
+- **Station Approval System**: Review and approve/reject pending fuel station registrations with optional feedback.
+- **Reports Moderation**: Moderate user-submitted reports with spam detection and resolution tracking.
+- **System Alerts**: Monitor critical and high-priority system alerts with acknowledgment tracking.
+- **Audit Logs**: Complete audit trail of all admin actions with filtering and export.
+- **User Management**: Suspend, activate, or delete users with reasons and audit logging.
+- **Data Export**: Export system data (users, stations, reports) to CSV.
+- **Dark Mode Support**: Toggle between light and dark themes with persistent preference storage.
+- **Responsive Design**: Fully responsive layout that works perfectly on desktop, tablet, and mobile with collapsible sidebar.
+- **Global Search**: Debounced search bar for finding users, stations, and reports across the system.
+- **Quick Actions Panel**: Fast-access buttons for common admin tasks (approve stations, review reports, view alerts, export data).
+- **Modern Interactions**:
+  - Smooth page transitions and animations
+  - Animated number counters (0 → target value)
+  - Loading states and skeleton screens
+  - Toast notifications for user feedback
+  - Hover effects and interactive elements
+  - Theme persistence with localStorage
 
 ### Estimated Waiting Time Logic
 - **Simple Formula**: `Estimated Waiting Time = Queue Length × 2 minutes`
@@ -76,7 +116,7 @@ Fuel shortages and long queues make real-time visibility valuable. This project 
 
 | Layer | Technologies |
 |--------|----------------|
-| **Frontend** | HTML5, CSS3, Bootstrap 5, Vanilla JavaScript, Leaflet.js (maps) |
+| **Frontend** | HTML5, CSS3, Bootstrap 5, Vanilla JavaScript, Chart.js, Leaflet.js (maps) |
 | **Backend** | PHP 8.x (PDO, Sessions, JSON APIs) |
 | **Database** | MySQL 8.x (InnoDB) |
 
@@ -88,20 +128,21 @@ Fuel shortages and long queues make real-time visibility valuable. This project 
 Fuel-Queue-Management-System/
 ├── frontend/                    # Client-side application
 │   ├── css/
-│   │   ├── main.css            # Global styles
+│   │   ├── main.css            # Global styles + animations
 │   │   ├── auth.css            # Login/register styling
 │   │   ├── dashboard.css       # Customer dashboard + enhanced queue display
-│   │   └── owner-dashboard.css # Owner dashboard + queue styling
+│   │   ├── owner-dashboard.css # Owner dashboard + queue styling
+│   │   └── admin-modern.css    # Modern SaaS-style admin dashboard (NEW)
 │   ├── js/
 │   │   ├── auth.js             # Authentication logic
 │   │   ├── dashboard.js        # Customer dashboard with queue handling
 │   │   ├── owner-dashboard.js  # Owner dashboard with fuel toggles
-│   │   └── admin.js            # Admin dashboard with API integration (NEW)
+│   │   └── admin-modern.js     # Modern admin dashboard (NEW)
 │   ├── login.html              # Login page
 │   ├── register.html           # Registration page
 │   ├── dashboard.html          # Customer dashboard (main view)
 │   ├── owner-dashboard.html    # Owner dashboard
-│   ├── admin-dashboard.html    # Admin dashboard (NEW)
+│   ├── admin-dashboard.html    # Modern admin dashboard (REDESIGNED)
 │   └── user_dashboard.html     # Redirect to dashboard.html
 │
 ├── backend/                     # Server-side PHP API
@@ -112,7 +153,7 @@ Fuel-Queue-Management-System/
 │   ├── stations.php            # GET all stations with queue + fuel
 │   ├── owner_station.php       # GET/POST owner's station + fuel save
 │   ├── update_queue.php        # POST/PATCH/PUT update queue (auto-calc wait time)
-│   ├── admin/                  # Admin API endpoints (NEW)
+│   ├── admin/                  # Admin API endpoints
 │   │   ├── users.php           # GET list users with filtering
 │   │   ├── user-actions.php    # POST suspend/activate/delete user
 │   │   ├── stations.php        # GET list stations with approval status
@@ -120,9 +161,12 @@ Fuel-Queue-Management-System/
 │   │   ├── reports.php         # GET list reports with filtering
 │   │   ├── report-actions.php  # POST review/resolve/spam report
 │   │   ├── statistics.php      # GET dashboard statistics
+│   │   ├── live-stats.php      # GET lightweight live stats (NEW)
+│   │   ├── analytics.php       # GET analytics data (NEW)
 │   │   ├── audit-logs.php      # GET admin action audit logs
 │   │   ├── alerts.php          # GET system alerts
 │   │   ├── alert-actions.php   # POST acknowledge/delete alerts
+│   │   ├── search.php          # GET global search results
 │   │   └── export.php          # GET CSV export (users/stations/reports)
 │   └── api/
 │       └── station/
@@ -130,7 +174,7 @@ Fuel-Queue-Management-System/
 │
 ├── database/
 │   ├── fqms.sql                # Complete schema + demo seed data
-│   └── admin_schema_update.sql # Admin feature schema updates (NEW)
+│   └── admin_schema_update.sql # Admin feature schema updates
 │
 ├── docs/
 │   ├── QUICK_START.md          # Setup and API quick reference
@@ -166,38 +210,20 @@ Database settings are located in `backend/config.php` and default to:
 2. Start **Apache** and **MySQL**.
 3. Navigate to: `http://localhost/Fuel-Queue-Management-System/frontend/login.html` (Adjust the path based on your setup).
 
-### 🔐 Admin Login & Setup (NEW - v2.1)
+### 🔐 Admin Dashboard Access
 
-The Admin Dashboard now fully supports the admin role. Follow these steps to set up admin access:
+The Admin Dashboard is now a professional, modern monitoring platform. To access it:
 
-#### Step 1: Update Database Schema
-Before importing or if already imported, ensure the users table includes the `admin` role:
+1. **Log in as admin** with:
+   - **Email**: `admin@fqms.lk`
+   - **Password**: `admin123`
 
-**Option A - Fresh Installation**:
-```sql
--- Import fqms.sql which includes admin role support
-mysql -u root -p fqms < database/fqms.sql
-```
-
-**Option B - Existing Installation**:
-```sql
--- Run the admin schema update
-mysql -u root -p fqms < database/admin_schema_update.sql
-```
-
-This adds:
-- `admin` role to the users table enum
-- Account status tracking (`is_active`, `suspension_reason`, `suspended_at`, `suspended_by`)
-- Station approval workflow
-- Report status tracking
-- Audit logging tables
-
-#### Step 2: Create Admin Account
-After schema update, create the admin user:
-
-```sql
--- Import the admin insert script
-mysql -u root -p fqms < database/admin_insert.sql
+2. You'll be redirected to `/frontend/admin-dashboard.html` with:
+   - **Modern SaaS-style design** with professional dark/light mode
+   - **Real-time monitoring** with animated counters and live updates
+   - **Professional analytics** with smooth Chart.js visualizations
+   - **Responsive layout** that works on all devices
+   - **Dark mode support** (toggle in navbar)
 ```
 
 **Default Admin Credentials**:
