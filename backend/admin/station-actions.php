@@ -48,9 +48,9 @@ try {
     $pdo->beginTransaction();
 
     if ($action === 'approve') {
-        if ($station['approval_status'] !== 'pending') {
+        if ($station['approval_status'] === 'approved') {
             $pdo->rollBack();
-            json_response(400, ['ok' => false, 'message' => 'Only pending stations can be approved']);
+            json_response(400, ['ok' => false, 'message' => 'Station is already approved']);
         }
 
         $updateStmt = $pdo->prepare(
@@ -65,7 +65,7 @@ try {
             'station',
             $stationId,
             "Approved station: {$station['station_name']} (Owner: {$station['email']})",
-            ['approval_status' => 'pending'],
+            ['approval_status' => $station['approval_status']],
             ['approval_status' => 'approved']
         );
 
@@ -94,9 +94,9 @@ try {
         json_response(200, ['ok' => true, 'message' => 'Station approved successfully']);
 
     } elseif ($action === 'reject') {
-        if ($station['approval_status'] !== 'pending') {
+        if ($station['approval_status'] === 'rejected') {
             $pdo->rollBack();
-            json_response(400, ['ok' => false, 'message' => 'Only pending stations can be rejected']);
+            json_response(400, ['ok' => false, 'message' => 'Station is already rejected']);
         }
 
         if (!$reason) {
@@ -116,7 +116,7 @@ try {
             'station',
             $stationId,
             "Rejected station: {$station['station_name']} (Reason: {$reason})",
-            ['approval_status' => 'pending'],
+            ['approval_status' => $station['approval_status']],
             ['approval_status' => 'rejected', 'rejection_reason' => $reason]
         );
 

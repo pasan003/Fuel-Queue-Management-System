@@ -679,6 +679,21 @@ function openUserActionModal(action, userId, userName) {
     document.getElementById('userActionTitle').textContent = `${action.charAt(0).toUpperCase() + action.slice(1)} User`;
     document.getElementById('userActionMessage').textContent = `${action.charAt(0).toUpperCase() + action.slice(1)} user "${userName}"?`;
     document.getElementById('userActionReason').value = '';
+    
+    const confirmBtn = document.getElementById('confirmUserActionBtn');
+    if (confirmBtn) {
+        if (action === 'activate') {
+            confirmBtn.className = 'btn btn-success';
+            confirmBtn.textContent = 'Activate';
+        } else if (action === 'delete') {
+            confirmBtn.className = 'btn btn-danger';
+            confirmBtn.textContent = 'Delete';
+        } else {
+            confirmBtn.className = 'btn btn-warning';
+            confirmBtn.textContent = 'Suspend';
+        }
+    }
+
     modal.show();
 }
 
@@ -708,7 +723,9 @@ function renderStationsTable(stations) {
         const actions = station.approval_status === 'pending'
             ? `<button class="btn btn-sm btn-success btn-action" onclick="openStationActionModal('approve', ${Number(station.station_id)}, '${inlineName}')">Approve</button>
                <button class="btn btn-sm btn-danger btn-action" onclick="openStationActionModal('reject', ${Number(station.station_id)}, '${inlineName}')">Reject</button>`
-            : '';
+            : station.approval_status === 'rejected'
+            ? `<button class="btn btn-sm btn-success btn-action" onclick="openStationActionModal('approve', ${Number(station.station_id)}, '${inlineName}')">Approve</button>`
+            : `<button class="btn btn-sm btn-danger btn-action" onclick="openStationActionModal('reject', ${Number(station.station_id)}, '${inlineName}')">Reject</button>`;
         return `
             <tr>
                 <td data-label="Station"><strong>${escapeHtml(station.station_name)}</strong></td>
@@ -732,6 +749,18 @@ function openStationActionModal(action, stationId, stationName) {
     document.getElementById('stationActionMessage').textContent = `${action.charAt(0).toUpperCase() + action.slice(1)} station "${stationName}"?`;
     document.getElementById('stationActionReason').value = '';
     document.getElementById('stationActionReason').placeholder = action === 'reject' ? 'Rejection reason (required)' : 'Reason (optional)';
+    
+    const confirmBtn = document.getElementById('confirmStationActionBtn');
+    if (confirmBtn) {
+        if (action === 'approve') {
+            confirmBtn.className = 'btn btn-success';
+            confirmBtn.textContent = 'Approve';
+        } else {
+            confirmBtn.className = 'btn btn-danger';
+            confirmBtn.textContent = 'Reject';
+        }
+    }
+
     modal.show();
 }
 
