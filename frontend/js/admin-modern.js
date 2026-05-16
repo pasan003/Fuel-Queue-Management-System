@@ -846,9 +846,15 @@ function renderUsersTable(users) {
             </td>
             <td>${formatDate(user.created_at)}</td>
             <td>
-                <button class="btn-action btn-sm" onclick="showUserActionModal('suspend', ${user.user_id})">
-                    Suspend
-                </button>
+                ${user.is_active ? `
+                    <button class="btn-action btn-sm" onclick="showUserActionModal('suspend', ${user.user_id})">
+                        Suspend
+                    </button>
+                ` : `
+                    <button class="btn-action btn-sm" style="background-color: var(--success-color, #10b981); color: white; border: none;" onclick="showUserActionModal('activate', ${user.user_id})">
+                        Re-activate
+                    </button>
+                `}
             </td>
         </tr>
     `).join('');
@@ -903,9 +909,13 @@ function renderStationsTable(stations) {
             <td>${escapeHtml(station.fuel_types || 'N/A')}</td>
             <td>
                 ${station.approval_status === 'pending' ? `
-                    <button class="btn-action btn-sm" onclick="showStationActionModal('approve', ${station.station_id})">Approve</button>
-                    <button class="btn-action btn-sm" onclick="showStationActionModal('reject', ${station.station_id})">Reject</button>
-                ` : '-'}
+                    <button class="btn-action btn-sm" style="background-color: var(--success-color, #10b981); color: white; border: none; margin-bottom: 4px;" onclick="showStationActionModal('approve', ${station.station_id})">Approve</button>
+                    <button class="btn-action btn-sm" style="background-color: var(--danger-color, #ef4444); color: white; border: none;" onclick="showStationActionModal('reject', ${station.station_id})">Reject</button>
+                ` : station.approval_status === 'rejected' ? `
+                    <button class="btn-action btn-sm" style="background-color: var(--success-color, #10b981); color: white; border: none;" onclick="showStationActionModal('approve', ${station.station_id})">Re-approve</button>
+                ` : `
+                    <button class="btn-action btn-sm" style="background-color: var(--danger-color, #ef4444); color: white; border: none;" onclick="showStationActionModal('reject', ${station.station_id})">Reject</button>
+                `}
             </td>
         </tr>
     `).join('');
@@ -1100,17 +1110,37 @@ function renderPagination(containerId, currentPage, totalPages, loadFn) {
 // ============================================================================
 
 function showUserActionModal(action, userId) {
-    const modal = new bootstrap.Modal(document.getElementById('userActionModal'));
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('userActionModal'));
     const titleEl = document.getElementById('userActionTitle');
     const msgEl = document.getElementById('userActionMessage');
+    const reasonEl = document.getElementById('userActionReason');
     
     titleEl.textContent = action === 'suspend' ? 'Suspend User' : 'Activate User';
     msgEl.textContent = `Are you sure you want to ${action} this user?`;
+    if (reasonEl) reasonEl.value = '';
+    
+    if (reasonEl) {
+        reasonEl.style.display = action === 'suspend' ? 'block' : 'none';
+    }
     
     AdminState.userActionData = { action, userId };
     
+    const confirmBtn = document.getElementById('confirmUserActionBtn');
+    if (action === 'activate') {
+        confirmBtn.className = 'btn btn-success';
+        confirmBtn.textContent = 'Re-activate';
+    } else {
+        confirmBtn.className = 'btn btn-danger';
+        confirmBtn.textContent = 'Suspend';
+    }
+    
     document.getElementById('confirmUserActionBtn').onclick = async () => {
-        const reason = document.getElementById('userActionReason').value;
+        const reason = reasonEl ? reasonEl.value.trim() : '';
+        if (action === 'suspend' && !reason) {
+            alert('Please provide a reason for suspension.');
+            return;
+        }
+
         const result = await AdminAPI.userAction(action, userId, reason);
         
         if (result.ok) {
@@ -1118,7 +1148,7 @@ function showUserActionModal(action, userId) {
             modal.hide();
             loadUsers(AdminState.userPage);
         } else {
-            showAlert(`Failed to ${action} user`, 'danger');
+            alert(result.message || `Failed to ${action} user`);
         }
     };
     
@@ -1126,17 +1156,37 @@ function showUserActionModal(action, userId) {
 }
 
 function showStationActionModal(action, stationId) {
-    const modal = new bootstrap.Modal(document.getElementById('stationActionModal'));
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('stationActionModal'));
     const titleEl = document.getElementById('stationActionTitle');
     const msgEl = document.getElementById('stationActionMessage');
+    const reasonEl = document.getElementById('stationActionReason');
     
     titleEl.textContent = action === 'approve' ? 'Approve Station' : 'Reject Station';
     msgEl.textContent = `Are you sure you want to ${action} this station?`;
+    if (reasonEl) reasonEl.value = '';
+    
+    if (reasonEl) {
+        reasonEl.style.display = action === 'reject' ? 'block' : 'none';
+    }
     
     AdminState.stationActionData = { action, stationId };
     
+    const confirmBtn = document.getElementById('confirmStationActionBtn');
+    if (action === 'approve') {
+        confirmBtn.className = 'btn btn-success';
+        confirmBtn.textContent = AdminState.stationActionData.action === 'approve' ? 'Approve' : 'Re-approve';
+    } else {
+        confirmBtn.className = 'btn btn-danger';
+        confirmBtn.textContent = 'Reject';
+    }
+
     document.getElementById('confirmStationActionBtn').onclick = async () => {
-        const reason = document.getElementById('stationActionReason').value;
+        const reason = reasonEl ? reasonEl.value.trim() : '';
+        if (action === 'reject' && !reason) {
+            alert('Please provide a reason for rejection.');
+            return;
+        }
+
         const result = await AdminAPI.stationAction(action, stationId, reason);
         
         if (result.ok) {
@@ -1144,7 +1194,7 @@ function showStationActionModal(action, stationId) {
             modal.hide();
             loadStations(AdminState.stationPage);
         } else {
-            showAlert(`Failed to ${action} station`, 'danger');
+            alert(result.message || `Failed to ${action} station`);
         }
     };
     
@@ -1152,8 +1202,10 @@ function showStationActionModal(action, stationId) {
 }
 
 function showReportActionModal(reportId) {
-    const modal = new bootstrap.Modal(document.getElementById('reportActionModal'));
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('reportActionModal'));
     AdminState.reportActionData = { reportId };
+    const notesEl = document.getElementById('reportAdminNotes');
+    if (notesEl) notesEl.value = '';
     
     document.getElementById('reportSpamBtn').onclick = async () => {
         const result = await AdminAPI.reportAction('spam', reportId);
@@ -1161,16 +1213,20 @@ function showReportActionModal(reportId) {
             showToast('Report marked as spam');
             modal.hide();
             loadReports(AdminState.reportPage);
+        } else {
+            alert(result.message || 'Failed to mark report as spam');
         }
     };
     
     document.getElementById('reportResolveBtn').onclick = async () => {
-        const notes = document.getElementById('reportAdminNotes').value;
+        const notes = notesEl ? notesEl.value.trim() : '';
         const result = await AdminAPI.reportAction('resolve', reportId, notes);
         if (result.ok) {
             showToast('Report resolved');
             modal.hide();
             loadReports(AdminState.reportPage);
+        } else {
+            alert(result.message || 'Failed to resolve report');
         }
     };
     
