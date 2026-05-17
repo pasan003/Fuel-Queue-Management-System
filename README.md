@@ -36,6 +36,27 @@ The production-level Admin Dashboard is now fully functional!
   - **Fix**: Removed inline styles from HTML sections and added `!important` to CSS rules in `admin-modern.css`
 - **Status**: ✅ All sections now display correctly with full data (Users: 3 users, Stations: 9 stations, Reports/Alerts/Audit: empty states working)
 
+### 📊 Fuel Usage Tracking & Expense Management (v2.3)
+A complete personal finance and fuel efficiency optimization system.
+- **Manual Fuel Entry Tracking**: Logs fuel type, liters, unit price, odometer reading, refueling station, and custom notes.
+- **Auto-Calculations**: Automatic computation of `Total Cost = Liters * Price per Liter` on the client side, plus backend computation of `Distance Traveled` and `Fuel Efficiency (km/L)` using historical odometer deltas.
+- **Interactive Analytics Panel**:
+  - **4 Smart Metric Cards**: Total Liters, Total Money Spent (LKR), Average Efficiency (km/L), and Total Distance Traveled.
+  - **4 Responsive Chart.js Visualizations**:
+    - **Monthly Fuel Cost Trend** (smooth area line chart).
+    - **Fuel Type Distribution** (clean distribution pie chart).
+    - **Monthly Liters Consumption** (detailed usage bar chart).
+    - **Vehicle Fuel Efficiency Trend** (historical km/L progression chart).
+- **Advanced History Management**: Paginated fuel log logs (5 per page), advanced filtering (by Month, Fuel Type, and Station), clean Edit entry modal support, and secure Delete endpoints with real-time analytics sync.
+
+**Fuel Tracking Fixes (May 2026)** — station dropdown empty & add-entry failures:
+- **Root cause (stations + fuel APIs)**: `frontend/js/fuel-tracking.js` called `/backend/...` (web-server root) instead of `../backend/...` (project-relative, same as `dashboard.js` and `auth.js`). Requests 404’d or missed the PHP session, so the station list never populated and fuel POST/analytics failed silently in the UI.
+- **Station dropdown**: Uses `../backend/stations.php?limit=50`, shows a loading state, displays **“No stations available”** when the list is empty, and surfaces auth/API errors in the select instead of leaving it blank.
+- **Add fuel entry**: POST URL corrected; `station_id` is sanitized (`""` / invalid → `null`); backend validates fuel type and optional station before insert; PDO errors are logged server-side with clearer client messages (e.g. invalid station, constraint failure).
+- **UX**: Submit button loading/disabled state, preserved form on failure, success/error alerts from API `message`, stations re-fetched when opening the Fuel Tracking tab if the cache is still empty.
+- **DB**: No schema changes required — `fuel_usage_logs` / `fuel_stations` / `fuel_types` verified against `database/fuel_tracking_schema.sql`.
+- **Debug**: `backend/test_fuel_api.php` checks table presence and columns; PHP `error_log()` on fuel-usage write failures.
+
 ---
 
 ## 📖 Problem Statement
