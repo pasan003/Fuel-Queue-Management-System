@@ -848,6 +848,291 @@ body.fqms-is-refreshing .results-meta {
   }
 }
 
+/* ============================================================
+   FUEL TRACKING & ANALYTICS STYLES
+   ============================================================ */
+
+/* Tab Navigation */
+.nav-tab {
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all var(--t) ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-tab:hover {
+  color: var(--primary);
+}
+
+.nav-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* Fuel Entry Form */
+.fuel-entry-panel {
+  margin-top: 18px;
+  padding: 18px;
+}
+
+.fuel-entry-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.fuel-entry-form .form-label {
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.fuel-entry-form .form-control,
+.fuel-entry-form .form-select {
+  border: 1px solid rgba(13, 115, 119, 0.2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 600;
+  transition: all var(--t) ease;
+}
+
+.fuel-entry-form .form-control:focus,
+.fuel-entry-form .form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(13, 115, 119, 0.1);
+  outline: none;
+}
+
+.btn {
+  border-radius: 10px;
+  font-weight: 700;
+  transition: all var(--t) ease;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), #0A5A5D);
+  border: none;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-md);
+  color: #fff;
+}
+
+.btn-secondary {
+  background: rgba(26, 26, 26, 0.08);
+  border: 1px solid rgba(26, 26, 26, 0.15);
+  color: var(--text);
+}
+
+.btn-secondary:hover {
+  background: rgba(26, 26, 26, 0.12);
+  transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.btn-outline-primary:hover {
+  background: rgba(13, 115, 119, 0.06);
+  transform: translateY(-1px);
+}
+
+#fuelFormMessage {
+  border-radius: 10px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+}
+
+#fuelFormMessage.alert-success {
+  background: rgba(45, 106, 79, 0.1);
+  border-color: rgba(45, 106, 79, 0.2);
+  color: var(--status-available);
+}
+
+#fuelFormMessage.alert-danger {
+  background: rgba(216, 71, 39, 0.1);
+  border-color: rgba(216, 71, 39, 0.2);
+  color: var(--status-nofuel);
+}
+
+/* Metric Cards */
+.metric-card {
+  padding: 18px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(13, 115, 119, 0.06), rgba(20, 255, 236, 0.08));
+  border: 1px solid rgba(13, 115, 119, 0.15);
+  text-align: center;
+  transition: all var(--t) ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(13, 115, 119, 0.28);
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+.metric-unit {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* Charts */
+.fuel-analytics-panel {
+  margin-top: 18px;
+  padding: 18px;
+}
+
+.chart-container {
+  background: #fff;
+  padding: 18px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(26, 26, 26, 0.10);
+  margin-bottom: 16px;
+}
+
+.chart-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 14px;
+  margin-top: 0;
+}
+
+canvas {
+  max-height: 280px;
+}
+
+/* Fuel History */
+.fuel-history-panel {
+  margin-top: 18px;
+  padding: 18px;
+}
+
+.table-responsive {
+  border-radius: var(--radius);
+  border: 1px solid rgba(26, 26, 26, 0.10);
+  overflow: hidden;
+}
+
+.table {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.table thead {
+  background: rgba(13, 115, 119, 0.08);
+  border-bottom: 2px solid rgba(13, 115, 119, 0.15);
+}
+
+.table thead th {
+  font-weight: 700;
+  color: var(--primary);
+  padding: 12px 14px;
+  border: none;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid rgba(26, 26, 26, 0.08);
+  transition: background-color var(--t) ease;
+}
+
+.table tbody tr:hover {
+  background: rgba(13, 115, 119, 0.03);
+}
+
+.table tbody td {
+  padding: 12px 14px;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.fuel-type-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: rgba(13, 115, 119, 0.12);
+  color: var(--primary);
+  border: 1px solid rgba(13, 115, 119, 0.2);
+}
+
+.efficiency-value {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.cost-value {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+@media (max-width: 576px) {
+  .fuel-entry-panel,
+  .fuel-analytics-panel,
+  .fuel-history-panel {
+    padding: 16px;
+  }
+
+  .metric-card {
+    padding: 14px;
+  }
+
+  .metric-value {
+    font-size: 1.4rem;
+  }
+
+  .chart-container {
+    padding: 14px;
+  }
+
+  canvas {
+    max-height: 220px;
+  }
+
+  .table {
+    font-size: 0.85rem;
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: 10px 8px;
+  }
+}
+
+
 @media (max-width: 576px) {
   .meta-grid {
     grid-template-columns: 1fr;

@@ -165,6 +165,32 @@ const AdminAPI = {
         });
     },
 
+    // Fuel prices API
+    getFuelPrices() {
+        return fetch('../backend/fuel-prices-api.php', {
+            credentials: 'include',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+        }).then(res => res.json());
+    },
+
+    updateFuelPrice(fuelTypeId, currentPrice) {
+        const formData = new FormData();
+        formData.append('fuel_type_id', fuelTypeId);
+        formData.append('current_price', currentPrice);
+
+        return fetch('../backend/fuel-prices-api.php', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: formData,
+        }).then(res => res.json());
+    },
+
     exportCSV(type) {
         window.location.href = `${this.baseUrl}/export.php?type=${type}`;
     },
@@ -402,6 +428,9 @@ function switchSection(section) {
             break;
         case 'audit':
             loadAuditLogs(AdminState.auditPage);
+            break;
+        case 'fuel-prices':
+            loadFuelPrices();
             break;
     }
 }
@@ -1074,6 +1103,126 @@ function renderAuditTable(logs) {
     `).join('');
     
     tbody.innerHTML = html;
+}
+
+// ============================================================================
+// FUEL PRICES MANAGEMENT
+// ============================================================================
+
+async function loadFuelPrices() {
+    try {
+        const result = await AdminAPI.getFuelPrices();
+        
+        if (!result.ok) {
+            showAlert('Failed to load fuel prices', 'danger');
+            return;
+        }
+        
+        renderFuelPricesForm(result.prices);
+        renderFuelPricesHistory(result.prices);
+        setupFuelPricesHandlers();
+    } catch (error) {
+        console.error('Error loading fuel prices:', error);
+        showAlert('Error loading fuel prices', 'danger');
+    }
+}
+
+function renderFuelPricesForm(prices) {
+    const container = document.getElementById('fuelPricesContainer');
+    if (!container) return;
+    
+    const html = prices.map(price => `
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="form-group">
+                <label class="form-label">${escapeHtml(price.fuel_name)} (per liter)</label>
+                <div class="input-group">
+                    <span class="input-group-text">LKR</span>
+                    <input type="number" class="form-control fuel-price-input" 
+                           data-fuel-type-id="${price.fuel_type_id}" 
+                           value="${parseFloat(price.current_price).toFixed(2)}" 
+                           step="0.01" min="0" placeholder="0.00">
+                </div>
+                <small class="form-text text-muted">Updated: ${formatDate(price.updated_at)}</small>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = html;
+}
+
+function renderFuelPricesHistory(prices) {
+    const tbody = document.getElementById('fuelPricesHistoryBody');
+    if (!tbody) return;
+    
+    if (!prices.length) {
+        tbody.innerHTML = '<tr><td colspan="4">No fuel prices available</td></tr>';
+        return;
+    }
+    
+    const html = prices.map(price => `
+        <tr>
+            <td>${escapeHtml(price.fuel_name)}</td>
+            <td><strong>LKR ${parseFloat(price.current_price).toFixed(2)}</strong></td>
+            <td>${escapeHtml(price.updated_by_name || 'System')}</td>
+            <td>${formatDate(price.updated_at)}</td>
+        </tr>
+    `).join('');
+    
+    tbody.innerHTML = html;
+}
+
+function setupFuelPricesHandlers() {
+    document.getElementById('fuelPricesSave')?.addEventListener('click', saveFuelPrices);
+    document.getElementById('fuelPricesRefreshBtn')?.addEventListener('click', loadFuelPrices);
+    document.getElementById('fuelPricesReset')?.addEventListener('click', loadFuelPrices);
+}
+
+async function saveFuelPrices() {
+    const inputs = document.querySelectorAll('.fuel-price-input');
+    if (!inputs.length) {
+        showAlert('No fuel prices to save', 'warning');
+        return;
+    }
+    
+    const saveBtn = document.getElementById('fuelPricesSave');
+    const originalContent = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    
+    try {
+        const results = [];
+        for (const input of inputs) {
+            const fuelTypeId = parseInt(input.dataset.fuelTypeId);
+            const price = parseFloat(input.value);
+            
+            if (price <= 0) {
+                showAlert('All prices must be greater than 0', 'danger');
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalContent;
+                return;
+            }
+            
+            results.push(
+                AdminAPI.updateFuelPrice(fuelTypeId, price)
+            );
+        }
+        
+        const responses = await Promise.all(results);
+        const allSuccess = responses.every(r => r.ok);
+        
+        if (allSuccess) {
+            showAlert('Fuel prices updated successfully!', 'success');
+            setTimeout(loadFuelPrices, 500);
+        } else {
+            showAlert('Failed to update some fuel prices', 'danger');
+        }
+    } catch (error) {
+        console.error('Error saving fuel prices:', error);
+        showAlert('Error saving fuel prices', 'danger');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalContent;
+    }
 }
 
 // ============================================================================
