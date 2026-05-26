@@ -110,25 +110,6 @@ foreach ($stationStmt->fetchAll() as $row) {
     ];
 }
 
-$latestReports = $pdo->query(
-    'SELECT r.report_id, r.comment, r.report_status, r.created_at, u.name AS reporter_name, fs.station_name
-     FROM reports r
-     LEFT JOIN users u ON u.user_id = r.user_id
-     LEFT JOIN fuel_stations fs ON fs.station_id = r.station_id
-     ORDER BY r.created_at DESC
-     LIMIT 5'
-)->fetchAll();
-
-$latestAlerts = $pdo->query(
-    'SELECT alert_id, alert_type, severity, title, message, created_at
-     FROM admin_alerts
-     WHERE is_acknowledged = 0
-     ORDER BY
-       CASE WHEN severity = "critical" THEN 0 WHEN severity = "high" THEN 1 WHEN severity = "medium" THEN 2 ELSE 3 END,
-       created_at DESC
-     LIMIT 5'
-)->fetchAll();
-
 json_response(200, [
     'ok' => true,
     'data' => [
@@ -145,8 +126,6 @@ json_response(200, [
         ],
         'fuel_availability' => $fuelAvailability,
         'active_stations' => $activeStations,
-        'latest_reports' => $latestReports,
-        'latest_alerts' => $latestAlerts,
         'generated_at' => date('c'),
     ],
 ]);

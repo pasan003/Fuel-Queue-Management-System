@@ -96,11 +96,7 @@ Fuel shortages and long queues make real-time visibility valuable. This project 
   - Pending Reports (awaiting review)
   - Active Users (not suspended)
   - Avg Wait Time (system-wide average)
-- **Live Activity Monitoring**: 
-  - Real-time queue activity feed with timestamps
-  - Recent alerts and suspicious activity panel
-  - Live station status grid with queue details and fuel availability
-  - Auto-refreshing every 15 seconds without page reload
+- **Live Station Status Grid**: Live station status grid with queue details and fuel availability, auto-refreshing every 15 seconds without page reload.
 - **Advanced Analytics Center**:
   - Queue trends chart (avg queue + wait time over time)
   - Fuel availability visualization (available vs unavailable stations)
