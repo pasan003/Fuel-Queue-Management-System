@@ -827,8 +827,53 @@
     </div>
 </div>
 
+<!-- Detail Panel Offcanvas - Reusable for all stat card drill-downs -->
+<div class="offcanvas offcanvas-end detail-panel" tabindex="-1" id="detailPanel" aria-labelledby="detailPanelTitle">
+    <div class="offcanvas-header">
+        <div class="offcanvas-title-wrapper">
+            <h5 class="offcanvas-title" id="detailPanelTitle">Details</h5>
+            <p class="offcanvas-subtitle" id="detailPanelSubtitle"></p>
+        </div>
+        <div class="offcanvas-header-actions">
+            <button class="btn btn-sm btn-outline-secondary me-2" id="detailPanelRefresh" title="Refresh data">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+    </div>
+    <div class="offcanvas-body">
+        <!-- Loading State -->
+        <div class="detail-loading" id="detailLoading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading data...</p>
+        </div>
+        
+        <!-- Error State -->
+        <div class="detail-error" id="detailError" style="display:none;">
+            <div class="empty-state">
+                <i class="fas fa-exclamation-triangle" style="color: var(--color-danger);"></i>
+                <p id="detailErrorMessage">Failed to load data</p>
+                <button class="btn btn-sm btn-outline-primary mt-2" id="detailErrorRetry">Retry</button>
+            </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div class="detail-empty" id="detailEmpty" style="display:none;">
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p id="detailEmptyMessage">No data available</p>
+            </div>
+        </div>
+        
+        <!-- Dynamic Content -->
+        <div class="detail-content" id="detailContent"></div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/admin-modern.js?v=2"></script>
+<script src="js/admin-modern.js?v=3"></script>
 
 </body>
 </html>

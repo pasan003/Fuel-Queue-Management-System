@@ -2,7 +2,7 @@
 
 A modern web application for checking real-time fuel availability and queue status at fuel stations. Customers can browse stations and see estimated wait times, while station owners can manage fuel availability and track queue metrics for their station.
 
-**Version**: 2.1 (with Admin Dashboard)
+**Version**: 2.2 (Professional Admin Station Management)
 **Status**: Production Ready ✅
 
 ### 🆕 Admin Dashboard (v2.1)
@@ -12,7 +12,17 @@ The production-level Admin Dashboard is now fully functional!
 - **Password**: `admin123`
 - See [Admin Setup Guide](ADMIN_SETUP.md) for complete details
 
-### 🔧 Recent Fixes (May 2026)
+### 🔧 Recent Enhancements (July 2026)
+**Active Stations Panel Redesigned — Professional Table Layout**:
+- Replaced stacked card-based station list with a responsive management table
+- Added summary stats bar: Total, Online, Busy, No Fuel, Pending, Rejected counts
+- Added search by name/location, filter by status (pending/approved/rejected) and fuel type (petrol/diesel/both/none)
+- Added sort controls: by Name, Queue Length, Wait Time, Last Updated with direction toggle
+- Implemented progressive disclosure: click any row to expand a detail panel showing full station info, owner details, queue & fuel status
+- added action buttons in detail: Map, Edit, Disable, History (with hooks for future implementation)
+- Improved spacing, typography, and visual hierarchy following enterprise dashboard conventions
+- All existing backend APIs, auto-refresh, and map integration preserved
+
 **Login Issue Fixed**: Admin login was failing with "Invalid credentials" even with correct email and password.
 - **Root Cause**: Admin user in database had invalid/mismatched password hash
 - **Fix Applied**: Updated admin password hash to correct bcrypt hash for `admin123`
