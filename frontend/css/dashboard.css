@@ -136,7 +136,24 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-.controls { margin-top: 18px; padding: 18px; }
+.controls { margin-top: 18px; padding: 18px; position: relative; z-index: 1; }
+
+/* ===== STABLE SEARCH & FILTER TOOLBAR ===== */
+
+.search-filter-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.search-filter-toolbar .search-wrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.search-filter-toolbar .filter-group-wrap {
+  flex: 0 0 auto;
+}
 
 .search-input {
   background: #fff;
@@ -154,7 +171,11 @@ body {
   box-shadow: 0 0 0 4px rgba(20, 255, 236, 0.20);
 }
 
-.filter-group { display: flex; flex-wrap: wrap; gap: 10px; }
+.filter-group {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
 
 .filter-btn {
   padding: 10px 14px;
@@ -165,6 +186,7 @@ body {
   font-weight: 700;
   transition: all var(--t) ease;
   user-select: none;
+  white-space: nowrap;
 }
 
 .filter-btn:hover {
@@ -178,6 +200,24 @@ body {
   border-color: transparent;
   color: #fff;
   box-shadow: var(--shadow-md);
+}
+
+/* Responsive: stack on small screens */
+@media (max-width: 991.98px) {
+  .search-filter-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-filter-toolbar .filter-group-wrap {
+    display: flex;
+    justify-content: center;
+  }
+
+  .filter-group {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 
 .map-card { margin-top: 18px; padding: 18px; }
@@ -705,6 +745,140 @@ body {
   line-height: 1.2;
 }
 
+/* ===== SEARCH SUGGESTIONS — COMPACT AUTOCOMPLETE DROPDOWN ===== */
+
+.search-wrapper {
+  position: relative;
+}
+
+.station-search-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  background: var(--card);
+  border: 1px solid rgba(26, 26, 26, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(17, 24, 39, 0.14), 0 2px 8px rgba(17, 24, 39, 0.06);
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.station-search-suggestions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.station-search-suggestions::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.station-search-suggestions::-webkit-scrollbar-thumb {
+  background: rgba(26, 26, 26, 0.15);
+  border-radius: 3px;
+}
+
+.fqms-suggest-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: inherit;
+  color: var(--text);
+}
+
+.fqms-suggest-item + .fqms-suggest-item {
+  border-top: 1px solid rgba(26, 26, 26, 0.06);
+}
+
+.fqms-suggest-item:hover {
+  background: rgba(13, 115, 119, 0.06);
+}
+
+.fqms-suggest-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+  background: rgba(13, 115, 119, 0.04);
+}
+
+.fqms-suggest-item:active {
+  background: rgba(13, 115, 119, 0.10);
+}
+
+.fqms-suggest-item__primary {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fqms-suggest-item__secondary {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fqms-suggest-item__secondary .fqms-suggest-queue {
+  margin-left: 8px;
+  font-weight: 600;
+}
+
+.fqms-suggest-avail {
+  color: var(--status-available);
+  font-weight: 600;
+}
+
+.fqms-suggest-noavail {
+  color: var(--status-nofuel);
+  font-weight: 600;
+}
+
+.fqms-suggest-item__secondary i {
+  margin-right: 3px;
+  font-size: 0.7rem;
+}
+
+/* ===== SELECTED STATION CARD HIGHLIGHT ===== */
+
+.station-card.is-selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(13, 115, 119, 0.20), var(--shadow-md);
+  animation: fqmsCardGlow 4s ease forwards;
+}
+
+@keyframes fqmsCardGlow {
+  0% {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(13, 115, 119, 0.30), var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  15% {
+    box-shadow: 0 0 0 6px rgba(13, 115, 119, 0.18), var(--shadow-md);
+    transform: translateY(-4px);
+  }
+  30% {
+    box-shadow: 0 0 0 3px rgba(13, 115, 119, 0.20), var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  100% {
+    border-color: rgba(26, 26, 26, 0.10);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(0);
+  }
+}
+
 /* ===== LIGHTWEIGHT LIVE UPDATE UX ===== */
 
 body.fqms-is-refreshing .results-meta {
@@ -791,7 +965,8 @@ body.fqms-is-refreshing .results-meta {
 @media (prefers-reduced-motion: reduce) {
   .results-meta.fqms-meta--refreshing::after { animation: none; }
   .station-card.fqms-card-updated,
-  .station-card.fqms-queue-changed { animation: none; }
+  .station-card.fqms-queue-changed,
+  .station-card.is-selected { animation: none !important; }
   .fqms-toast { transition: none; }
 }
 

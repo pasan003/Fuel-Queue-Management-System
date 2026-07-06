@@ -13,6 +13,53 @@ The production-level Admin Dashboard is now fully functional!
 - See [Admin Setup Guide](ADMIN_SETUP.md) for complete details
 
 ### 🔧 Recent Enhancements (July 2026)
+
+**Refined Search Suggestions & Stable Toolbar Layout**:
+- **Compact autocomplete dropdown**: Replaced the bulky card-style suggestions with a clean, text-based dropdown similar to Google Maps — station name as primary text, location + fuel availability + queue count as secondary line
+- **Stable search & filter toolbar**: Search input and filter buttons (All / Available / Limited / No Fuel) now use a Flexbox layout (`search-filter-toolbar`). Typing in the search box **no longer shifts the filter buttons** — they remain fixed in position
+- **Visual polish**: Improved spacing, alignment, hover/focus states, border radius, and dropdown shadow. Custom scrollbar styling for the suggestions dropdown. Focus-visible outline for keyboard navigation
+- **Responsive**: Desktop — search on left, filters on right. Tablet/mobile (< 992px) — search stacks on one row, filters wrap on a second row
+- **Cleaner code**: Removed unused `getQueueLabel`, `getQueueBadgeClass`, and `getFuelText` helpers. Simplified render logic in `station-map-enhancements.js`
+- **Full compatibility preserved**: All existing functionality — search filtering, card highlighting, auto-scroll to station, map integration, auto-refresh, station filters — remains unchanged
+
+**Search Suggestions + Station Card Auto-Scroll & Highlight**:
+- **Search suggestions dropdown**: Typeahead suggestions now appear below the search input as the user types, showing station name, location, fuel types, queue badge, and fuel availability (powered by `station-map-enhancements.js`)
+- **Card auto-scroll on selection**: When a suggestion is clicked or a station card is clicked, the page smoothly scrolls to bring the corresponding station card into the center of the viewport
+- **Temporary card highlight**: The selected station card receives a subtle glowing border + shadow effect that automatically fades away after 4 seconds — no distracting animations
+- **Smart filter reset**: When selecting from suggestions, the status filter resets to "All" and the search input is populated with the station name so the card remains visible
+- **Map + card sync**: Selection simultaneously focuses the map marker, opens its popup, and scrolls to the card — both views stay in sync
+- **Auto-refresh compatible**: The highlight is preserved across auto-refresh cycles; the highlight timer and scroll position are not interrupted by polling
+- **Click handling**: Clicking a station card in the grid also scrolls to it and highlights it (consistent UX with suggestion selection)
+- **Responsive**: Works naturally on desktop, tablet, and mobile — scrolling respects viewport size
+
+**Personalized Dashboard Hero Section with Typewriter Animation**:
+- Replaced static dashboard titles ("Fuel Station Dashboard" / "Owner Dashboard") with a dynamic, personalized hero section
+- **Time-based greeting**: Displays "Good Morning/Afternoon/Evening/Night, {User Name}!" based on local time
+- **Typewriter animation**: Greeting text animates character-by-character once on page load, with blinking cursor
+- **Rotating subtitles**: Professional messages randomly selected from a curated set per user role
+- **Contextual metadata**: Shows current date, last login time, and user role (Customer / Station Owner)
+- **Quick action buttons**: Role-specific shortcuts — User: Find Stations, Report Queue, View History; Owner: Update Queue, Manage Fuel, View Reports
+- **Animated counters**: Numeric `.metric-value` elements count up smoothly on page load and when switching to Fuel Tracking tab
+- **Reusable component**: Single CSS (`dashboard-hero.css`) and JS (`dashboard-hero.js`) module shared by both User and Owner dashboards — no duplicate code
+- **Accessibility**: Respects `prefers-reduced-motion` — skips typewriter and counter animations when reduced motion is preferred
+- **Responsive design**: Adapts padding, font sizes, and layout across desktop, tablet, and mobile
+- **Performance**: Lightweight DOM manipulation, no libraries added, no impact on page load time
+- All existing dashboard functionality, auto-refresh, map, and fuel tracking remain completely unchanged
+
+**Owner Quick Action Navigation Fix (Context-Aware Redirect)** 🧭
+- **Fix: Owner quick action buttons silently fail on User Dashboard**: When an owner viewed the User Dashboard (`dashboard.html`), clicking "Manage Fuel" or "View Reports" appeared to do nothing.
+- **Root Cause**: The `ACTION_HANDLERS` in `dashboard-hero.js` only used DOM-based interactions (looking for `#saveFuelBtn`, `.queue-info-panel`, `#ownerUpdateQueueBtn`). These elements only exist on the Owner Dashboard (`owner-dashboard.html`), so on the User Dashboard the handlers silently failed.
+- **Fix Added**: New `isOnOwnerDashboard()` helper checks for `#ownerUpdateQueueBtn` to detect which page the component is running on. Each owner action handler now:
+  1. Checks if the relevant DOM element exists (Owner Dashboard path — unchanged behavior)
+  2. If not found, redirects to `owner-dashboard.html` via `window.location.href`
+- **No duplicate navigation logic**: Reuses existing `owner-dashboard.html` page which already loads all data on `DOMContentLoaded`
+- **All roles unaffected**: Customers never see owner buttons. Admins don't use this component. Owner Dashboard behavior is identical.
+
+**Search Dropdown & Card Interaction Fixes (Stacking Context + Shared focusStation)** 🛠️
+- **Fix: Search suggestion dropdown rendering behind map**: Root cause was the `.controls` panel's CSS `fadeInUp` animation (which uses `transform`) creating a CSS stacking context. Since both `.controls` and `.map-card` sections have the same animation, they are painted in DOM order — `.map-card` on top. Fixed by adding `position: relative; z-index: 1` to `.controls`, moving it to a higher painting step (positive z-index stacking contexts) so the absolutely-positioned dropdown appears above the map. No arbitrary z-index values used — precisely targeted fix.
+- **Fix: Station card → map interaction restored**: Created a shared `focusStation(stationId, opts)` function that consolidates card scrolling, highlighting, and map focus logic. Both the search suggestion flow (`selectStation()`) and station card click handler now call this single function, eliminating duplicated code and ensuring consistent behavior.
+- **Verified features**: Search suggestions, search filtering, auto-scroll, station highlight animation, map centering, marker popup, auto-refresh, filter buttons, and responsive layout all continue working.
+
 **Active Stations Panel Redesigned — Professional Table Layout**:
 - Replaced stacked card-based station list with a responsive management table
 - Added summary stats bar: Total, Online, Busy, No Fuel, Pending, Rejected counts

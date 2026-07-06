@@ -18,6 +18,7 @@
   <!-- Project CSS -->
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/dashboard-hero.css">
   <!-- Leaflet (OpenStreetMap) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
@@ -83,10 +84,21 @@
     </nav>
 
     <main class="container pb-5">
-      <!-- Header Section -->
-      <section class="hero animate-in">
-        <h1>Fuel Station Dashboard</h1>
-        <p>Check real-time fuel availability and track your fuel usage</p>
+      <!-- Personalized Hero Section -->
+      <section class="dashboard-hero animate-in">
+        <div class="hero-body">
+          <div class="hero-greeting-wrap">
+            <span class="hero-greeting" id="heroGreeting"></span>
+            <span class="hero-cursor" id="heroCursor">|</span>
+          </div>
+          <p class="hero-subtitle" id="heroSubtitle"></p>
+          <div class="hero-meta" id="heroMeta">
+            <span class="hero-meta-item"><i class="fa-regular fa-calendar"></i> <span id="heroDate"></span></span>
+            <span class="hero-meta-item"><i class="fa-regular fa-clock"></i> Last login: <span id="heroLastLogin"></span></span>
+            <span class="hero-meta-item"><i class="fa-solid fa-user-tag"></i> Role: <span id="heroRole"></span></span>
+          </div>
+          <div class="hero-actions" id="heroActions"></div>
+        </div>
       </section>
 
       <!-- Dashboard Tabs Navigation -->
@@ -105,17 +117,18 @@
       <div id="stationsView">
         <!-- Search + Filter -->
         <section class="panel controls animate-in" style="animation-delay: 0.06s;">
-        <div class="row g-3 align-items-center">
-          <div class="col-12 col-lg-6">
+        <div class="search-filter-toolbar">
+          <div class="search-wrapper">
             <div class="input-group">
               <span class="input-group-text" style="background: #fff; border: 1px solid rgba(26,26,26,0.10); color: #0D7377; border-right: none; border-radius: 14px 0 0 14px;">
                 <i class="fa-solid fa-magnifying-glass"></i>
               </span>
-              <input id="searchInput" type="text" class="form-control search-input" placeholder="Search by station name or location..." aria-label="Search stations">
+              <input id="searchInput" type="text" class="form-control search-input" placeholder="Search by station name or location..." aria-label="Search stations" autocomplete="off">
             </div>
+            <div id="stationSearchSuggestions" class="station-search-suggestions d-none"></div>
           </div>
-          <div class="col-12 col-lg-6">
-            <div class="filter-group justify-content-lg-end" role="group" aria-label="Station status filters">
+          <div class="filter-group-wrap">
+            <div class="filter-group" role="group" aria-label="Station status filters">
               <button class="filter-btn active" type="button" data-filter="all">All</button>
               <button class="filter-btn" type="button" data-filter="available">Available</button>
               <button class="filter-btn" type="button" data-filter="limited">Limited</button>
@@ -435,9 +448,11 @@
   <!-- Chart.js for fuel analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/dashboard-hero.js"></script>
+  <script src="js/station-map-enhancements.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Cache-bust to avoid running an older copied project build -->
-  <script src="js/dashboard.js?v=2026-05-11-1"></script>
+  <script src="js/dashboard.js?v=2026-07-06-1"></script>
   <script src="js/fuel-tracking.js?v=2026-05-17-1"></script>
 </body>
 </html>
