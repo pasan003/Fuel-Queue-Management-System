@@ -31,6 +31,10 @@ let lastRefreshErrorAt = 0;
 let lastRenderedStationIdsKey = "";
 let toastTimerId = null;
 
+// Search suggestion + card selection state
+let selectedStationId = null;
+let highlightTimerId = null;
+
 // Leaflet map references for user dashboard
 let userMap = null;
 let userMarkersLayer = null;
@@ -264,9 +268,12 @@ function focusStationOnMap(stationId, opts = {}) {
   const marker = userMarkersByStationId.get(id) || userMarkers[String(id)] || null;
 
   // Smoothly scroll attention to the map (especially on mobile).
-  try {
-    document.getElementById("mapUser")?.scrollIntoView({ behavior: "smooth", block: "center" });
-  } catch (_) {}
+  // Skip if the caller already handles scrolling (e.g., card click).
+  if (!opts.skipMapScroll) {
+    try {
+      document.getElementById("mapUser")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (_) {}
+  }
 
   if (marker) {
     setSelectedMarker(id);
@@ -298,6 +305,126 @@ function focusStationOnMap(stationId, opts = {}) {
       } catch (_) {}
     }, 950);
   } catch (_) {}
+}
+
+/**
+ * Scroll the selected station card into the viewport center and highlight it.
+ */
+function scrollToStationCard(stationId) {
+  const id = Number(stationId);
+  if (!Number.isFinite(id)) return;
+
+  const cardRoot = document.querySelector(
+    `#stationsGrid [data-station-id="${id}"]`
+  );
+  if (!cardRoot) return;
+
+  // Scroll the card wrapper into the center of the viewport
+  cardRoot.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  // Add highlight after scroll animation settles
+  if (highlightTimerId) {
+    clearTimeout(highlightTimerId);
+    highlightTimerId = null;
+  }
+  highlightTimerId = setTimeout(() => {
+    highlightCard(id);
+  }, 400);
+}
+
+/**
+ * Apply a temporary visual highlight to a station card.
+ * The highlight auto-removes after 4 seconds.
+ */
+function highlightCard(stationId) {
+  // Remove highlight from any previously highlighted card
+  document.querySelectorAll(".station-card.is-selected").forEach((el) => {
+    el.classList.remove("is-selected");
+  });
+
+  const id = Number(stationId);
+  if (!Number.isFinite(id)) return;
+
+  // Find the card inside its wrapper
+  const card = document.querySelector(
+    `#stationsGrid [data-station-id="${id}"] .station-card`
+  );
+  if (!card) return;
+
+  selectedStationId = id;
+  card.classList.add("is-selected");
+
+  // Clear previous auto-remove timer
+  if (highlightTimerId) {
+    clearTimeout(highlightTimerId);
+  }
+
+  // Auto-remove highlight after 4 seconds.
+  // Re-query DOM inside timeout to avoid stale references after re-render.
+  highlightTimerId = setTimeout(() => {
+    const currentCard = document.querySelector(
+      `#stationsGrid [data-station-id="${selectedStationId}"] .station-card`
+    );
+    if (currentCard) {
+      currentCard.classList.remove("is-selected");
+    }
+    selectedStationId = null;
+    highlightTimerId = null;
+  }, 4000);
+}
+
+/**
+ * Shared station focus function: scrolls to card, highlights it, and focuses map.
+ * Used by both search suggestion clicks and station card clicks.
+ */
+function focusStation(stationId, opts = {}) {
+  const id = Number(stationId);
+  if (!Number.isFinite(id)) return;
+
+  const station = state.stations.find((s) => Number(s.station_id) === id);
+  if (!station) return;
+
+  // Scroll to the card and highlight it
+  scrollToStationCard(id);
+
+  // Focus map on the station (with popup)
+  focusStationOnMap(id, {
+    lat: station.latitude,
+    lng: station.longitude,
+    skipMapScroll: opts.skipMapScroll === true,
+  });
+}
+
+/**
+ * Full station selection flow: reset filters, re-render, scroll to card and highlight, focus map.
+ * Used when a search suggestion is clicked.
+ */
+function selectStation(stationId) {
+  const id = Number(stationId);
+  if (!Number.isFinite(id)) return;
+
+  // Find the station in state
+  const station = state.stations.find((s) => Number(s.station_id) === id);
+  if (!station) return;
+
+  // Preserve the search text so the filtered list shows this station
+  state.query = station.station_name;
+  const searchEl = document.getElementById("searchInput");
+  if (searchEl) {
+    searchEl.value = station.station_name;
+  }
+
+  // Reset filter to "all" to ensure the station is visible
+  state.filter = "all";
+  document.querySelectorAll(".filter-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-filter") === "all");
+  });
+
+  // Re-render the grid with the updated query + filter
+  render();
+
+  // Focus station: scroll to card, highlight, and center map
+  focusStation(id);
 }
 
 function escapeHtml(str) {
@@ -886,6 +1013,22 @@ function render() {
 
   // Track current visible set to enable targeted refresh patching.
   lastRenderedStationIdsKey = stationIdsKeyFromStations(filtered);
+
+  // Reapply highlight if a station was selected (e.g., after auto-refresh re-render)
+  if (selectedStationId != null) {
+    // Use a microtask to let the DOM settle, then re-highlight
+    Promise.resolve().then(() => {
+      const card = grid.querySelector(
+        `[data-station-id="${selectedStationId}"] .station-card`
+      );
+      if (card) {
+        card.classList.add("is-selected");
+      } else {
+        // Station no longer visible; clear selection
+        selectedStationId = null;
+      }
+    });
+  }
 }
 
 function setActiveFilter(filter) {
@@ -1025,6 +1168,34 @@ document.addEventListener("DOMContentLoaded", async () => {
       state.query = e.target.value;
       render();
     });
+
+    // Wire up search suggestions (typeahead dropdown)
+    if (
+      window.FQMSMapEnhancements &&
+      typeof window.FQMSMapEnhancements.initStationSearchSuggestions === "function"
+    ) {
+      const suggestionsMount = document.getElementById("stationSearchSuggestions");
+      if (suggestionsMount) {
+        window.FQMSMapEnhancements.initStationSearchSuggestions({
+          inputEl: search,
+          mountEl: suggestionsMount,
+          fetchStations: async (query) => {
+            // Search across ALL stations locally (not just filtered set)
+            const q = query.trim().toLowerCase();
+            if (!q) return [];
+            return state.stations.filter(
+              (s) =>
+                String(s.station_name || "").toLowerCase().includes(q) ||
+                String(s.location || "").toLowerCase().includes(q)
+            );
+          },
+          onSelect: (stationId) => {
+            selectStation(stationId);
+          },
+          maxItems: 8,
+        });
+      }
+    }
   }
 
   document.querySelectorAll(".filter-btn").forEach((btn) => {
@@ -1043,10 +1214,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const cardEl = e.target?.closest?.("[data-station-id]");
     if (!cardEl) return;
 
-    // Only handle clicks that occur within the station grid or suggestion container (if present).
+    // Only handle clicks within the station grid.
+    // Suggestion clicks are handled by initStationSearchSuggestions onSelect callback.
     const inStations = Boolean(cardEl.closest?.("#stationsGrid"));
-    const inSuggestions = Boolean(cardEl.closest?.("#stationSearchSuggestions"));
-    if (!inStations && !inSuggestions) return;
+    if (!inStations) return;
 
     const id = Number(cardEl.getAttribute("data-station-id"));
     if (!Number.isFinite(id)) return;
@@ -1060,7 +1231,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log("Card coords", { lat, lng });
     }
 
-    focusStationOnMap(id, { lat, lng });
+    // Use shared focusStation for consistent behavior (card scroll, highlight, map center)
+    focusStation(id);
   });
 
   // Queue Update Modal Event Listeners

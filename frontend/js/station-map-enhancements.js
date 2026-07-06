@@ -21,31 +21,13 @@
     };
   }
 
-  function getFuelText(s) {
-    const p = Boolean(s?.petrol);
-    const d = Boolean(s?.diesel);
-    if (p && d) return "Petrol, Diesel";
-    if (p) return "Petrol";
-    if (d) return "Diesel";
-    return "None";
-  }
-
-  function getQueueLabel(queueLength) {
-    const q = Number(queueLength ?? 0);
-    if (!Number.isFinite(q) || q <= 5) return "Low Queue";
-    if (q <= 15) return "Medium Queue";
-    return "High Queue";
-  }
-
-  function getQueueBadgeClass(queueLength) {
-    const q = Number(queueLength ?? 0);
-    if (!Number.isFinite(q) || q <= 5) return "success";
-    if (q <= 15) return "warning";
-    return "danger";
-  }
-
   function isFuelAvailable(s) {
     return Boolean(s?.petrol) || Boolean(s?.diesel);
+  }
+
+  function getAvailText(s) {
+    if (Boolean(s?.petrol) || Boolean(s?.diesel)) return "Fuel Available";
+    return "No Fuel";
   }
 
   function renderSuggestions(mountEl, stations) {
@@ -60,25 +42,19 @@
     mountEl.classList.remove("d-none");
     mountEl.innerHTML = stations
       .map((s) => {
-        const qLabel = getQueueLabel(s.queue_length);
-        const qBadge = getQueueBadgeClass(s.queue_length);
         const avail = isFuelAvailable(s);
-        const availBadge = avail ? "success" : "secondary";
-        const availText = avail ? "Fuel Available" : "No Fuel";
+        const availIcon = avail ? "fa-check-circle" : "fa-circle-xmark";
+        const availClass = avail ? "fqms-suggest-avail" : "fqms-suggest-noavail";
+        const qLen = Number(s.queue_length ?? 0);
         return `
-          <button type="button" class="list-group-item list-group-item-action fqms-suggest-card" data-station-id="${Number(
+          <button type="button" class="fqms-suggest-item" data-station-id="${Number(
             s.station_id
           )}">
-            <div class="d-flex justify-content-between align-items-start gap-2">
-              <div class="min-w-0">
-                <div class="fw-bold text-truncate">${escapeHtml(s.station_name)}</div>
-                <div class="text-muted small text-truncate">${escapeHtml(s.location || "")}</div>
-                <div class="small mt-1">${escapeHtml(getFuelText(s))}</div>
-              </div>
-              <div class="text-end flex-shrink-0">
-                <span class="badge text-bg-${qBadge} mb-1">${escapeHtml(qLabel)}</span><br/>
-                <span class="badge text-bg-${availBadge}">${availText}</span>
-              </div>
+            <div class="fqms-suggest-item__primary">${escapeHtml(s.station_name)}</div>
+            <div class="fqms-suggest-item__secondary">
+              ${escapeHtml(s.location || "")}
+              <span class="${availClass}"><i class="fa-solid ${availIcon}"></i> ${getAvailText(s)}</span>
+              <span class="fqms-suggest-queue">${qLen} vehicles</span>
             </div>
           </button>
         `;
@@ -207,7 +183,6 @@
 
   window.FQMSMapEnhancements = {
     initStationSearchSuggestions,
-    getQueueLabel,
   };
 })();
 
