@@ -14,6 +14,12 @@ The production-level Admin Dashboard is now fully functional!
 
 ### 🔧 Recent Enhancements (July 2026)
 
+**Fuel Prices Section Removed from Admin Dashboard**:
+- The "Fuel Prices" sidebar menu item and its associated content section have been removed from the Admin Dashboard
+- This section is no longer relevant to admin workflows as admin responsibilities focus on system management, moderation, and monitoring — not fuel price management
+- **Files modified**: `frontend/admin-dashboard.html` (sidebar + content section), `frontend/js/admin-modern.js` (API methods, navigation case, management functions), `frontend/css/admin-modern.css` (Fuel Prices CSS)
+- **No other dashboard functionality affected**: All navigation sections (Dashboard, Users, Stations, Reports, Alerts, Audit Logs), quick actions, analytics, charts, and responsive/dark mode themes continue working as before
+
 **Refined Search Suggestions & Stable Toolbar Layout**:
 - **Compact autocomplete dropdown**: Replaced the bulky card-style suggestions with a clean, text-based dropdown similar to Google Maps — station name as primary text, location + fuel availability + queue count as secondary line
 - **Stable search & filter toolbar**: Search input and filter buttons (All / Available / Limited / No Fuel) now use a Flexbox layout (`search-filter-toolbar`). Typing in the search box **no longer shifts the filter buttons** — they remain fixed in position
